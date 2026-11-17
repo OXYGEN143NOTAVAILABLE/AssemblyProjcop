@@ -27,7 +27,6 @@ env/
 # Distribution / build
 dist/
 build/
-/frontend/static/app/
 
 # Mac
 .DS_Store

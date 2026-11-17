@@ -40,7 +40,6 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 TEMPLATES_DIR = PROJECT_ROOT / "frontend" / "templates"
 STATIC_DIR = PROJECT_ROOT / "frontend" / "static"
-REACT_INDEX = STATIC_DIR / "app" / "index.html"
 
 def detect_lan_ip() -> str | None:
     """Best-effort LAN IP detection for development URLs."""
@@ -1028,33 +1027,46 @@ def read_and_process_template(template_name: str) -> str:
 # PAGE ROUTES
 # ============================================================
 
-def serve_react_app() -> FileResponse:
-    if not REACT_INDEX.is_file():
-        raise HTTPException(
-            status_code=503,
-            detail="React frontend is not built. Run npm install and npm run build in frontend.",
-        )
-    return FileResponse(REACT_INDEX)
-
-
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    """Serve the React application."""
-    return serve_react_app()
+    """Serve the homepage."""
+    try:
+        return read_and_process_template("homepage.html")
+    except FileNotFoundError:
+        return HTMLResponse("<h1>Assembly PC</h1><p>Homepage template not found.</p>", status_code=500)
 
 
 @app.get("/simulator", response_class=HTMLResponse)
-async def simulator():
-    """Serve the React PC simulator."""
-    return serve_react_app()
+async def simulator(request: Request):
+    """Serve the main simulator (simulation.html)."""
+    user = current_auth_user(request)
+    readonly_build_id = request.query_params.get("build")
+    readonly_view = readonly_build_id and request.query_params.get("readonly") in {"1", "true", "yes"}
+    if not user and not readonly_view:
+        return RedirectResponse("/?login_required=simulator", status_code=303)
+    content = read_and_process_template("simulation.html")
+    if not user:
+        return content
+    auth_script = (
+        "<script>"
+        f"window.AUTH_USER = {json.dumps(user)};"
+        "try {"
+        "sessionStorage.setItem('userRole', window.AUTH_USER.role);"
+        "sessionStorage.setItem('userName', window.AUTH_USER.displayName || window.AUTH_USER.email || window.AUTH_USER.studentId || 'User');"
+        "if (window.AUTH_USER.studentId) sessionStorage.setItem('studentId', window.AUTH_USER.studentId);"
+        "if (window.AUTH_USER.email) sessionStorage.setItem('userEmail', window.AUTH_USER.email);"
+        "} catch (err) {}"
+        "</script>"
+    )
+    return content.replace("</head>", f"{auth_script}\n</head>")
 
 
 @app.get("/admin/login", response_class=HTMLResponse)
 async def admin_login_page(request: Request):
-    """Serve the React admin login page."""
+    """Serve the admin login page."""
     if verify_admin_session(request.cookies.get(ADMIN_COOKIE_NAME)):
         return RedirectResponse("/admin", status_code=303)
-    return serve_react_app()
+    return render_admin_login(back_url=admin_back_from_request(request))
 
 
 @app.post("/admin/login")
@@ -1109,48 +1121,44 @@ async def admin_logout_background(request: Request):
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request):
-    """Serve the React admin dashboard."""
+    """Serve the admin dashboard."""
     if not verify_admin_session(request.cookies.get(ADMIN_COOKIE_NAME)):
         return RedirectResponse(admin_login_url(admin_back_from_request(request)), status_code=303)
-    return serve_react_app()
+    return read_and_process_template("admin-dashboard.html")
 
 
 @app.get("/gallery", response_class=HTMLResponse)
 async def gallery():
-    """Serve the React build gallery."""
-    return serve_react_app()
+    """Serve the public build gallery."""
+    return read_and_process_template("gallery.html")
 
 
 @app.get("/profile", response_class=HTMLResponse)
 async def profile(request: Request):
-    """Serve the React user profile."""
+    """Serve the user profile page."""
     user = current_auth_user(request)
     if not user:
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse("/?login_required=profile", status_code=303)
     if user.get("role") == "admin":
         return RedirectResponse("/admin", status_code=303)
-    return serve_react_app()
+    return read_and_process_template("profile.html")
 
 
 @app.get("/profiles/{role}/{profile_id}", response_class=HTMLResponse)
 async def visited_profile(role: str, profile_id: int):
-    """Serve the React public profile view."""
+    """Serve a public profile view for another user."""
     target = get_public_profile(role, profile_id)
     if not target:
         raise HTTPException(status_code=404, detail={"error": "Profile not found"})
-    return serve_react_app()
+    content = read_and_process_template("profile.html")
+    target_script = f"<script>window.PROFILE_TARGET = {json.dumps({'role': target['role'], 'id': target['id']})};</script>"
+    return content.replace("</head>", f"{target_script}\n</head>")
 
 
 @app.get("/search", response_class=HTMLResponse)
 async def search_page():
-    """Serve React search results."""
-    return serve_react_app()
-
-
-@app.get("/login", response_class=HTMLResponse)
-async def login_page():
-    """Serve the React account login and registration page."""
-    return serve_react_app()
+    """Serve global search results."""
+    return read_and_process_template("search.html")
 
 
 # ============================================================
@@ -1214,7 +1222,7 @@ async def api_auth_register(request: Request):
         set_app_session_cookie(response, "instructor", user["username"], remember)
         return response
 
-    raise HTTPException(status_code=400, detail={"error": "Role must be student, instructor, or admin"})
+    raise HTTPException(status_code=400, detail={"error": "Role must be student or instructor"})
 
 
 @app.post("/api/auth/login")
@@ -1256,25 +1264,7 @@ async def api_auth_login(request: Request):
         audit_logger.info(f"Student login successful: {school_id} from {get_client_ip(request)}")
         return response
 
-    if role == "admin":
-        username = clean_text(payload.get("email") or payload.get("username") or "")
-        if not username:
-            raise HTTPException(status_code=400, detail={"error": "Username is required"})
-        if check_account_lockout(username):
-            audit_logger.warning(f"Locked admin account attempt: {username} from {get_client_ip(request)}")
-            raise HTTPException(status_code=429, detail={"error": "Account locked due to too many failed attempts. Please try again later."})
-        user = verify_admin_credentials(username, password)
-        if not user or user.get("role") != "admin":
-            audit_logger.warning(f"Failed admin login: {username} from {get_client_ip(request)}")
-            raise HTTPException(status_code=401, detail={"error": "Invalid administrator credentials"})
-        response = JSONResponse({"ok": True, "user": public_instructor_user(user), "redirectUrl": "/admin"})
-        mark_user_logged_in("admin", username=user["username"])
-        set_app_session_cookie(response, "admin", user["username"], remember)
-        set_admin_session_cookie(response, user["username"])
-        audit_logger.info(f"Admin login successful: {username} from {get_client_ip(request)}")
-        return response
-
-    if role in {"instructor", "teacher"}:
+    if role in {"instructor", "teacher", "admin"}:
         email = normalize_email(payload.get("email") or payload.get("username") or "")
         if not email:
             raise HTTPException(status_code=400, detail={"error": "Email is required"})
@@ -1298,7 +1288,7 @@ async def api_auth_login(request: Request):
         audit_logger.info(f"Instructor login successful: {email} from {get_client_ip(request)}")
         return response
 
-    raise HTTPException(status_code=400, detail={"error": "Role must be student, instructor, or admin"})
+    raise HTTPException(status_code=400, detail={"error": "Role must be student or instructor"})
 
 
 @app.post("/api/auth/forgot-password")
@@ -1367,9 +1357,8 @@ async def api_auth_me(request: Request):
 
 
 @app.post("/api/auth/logout")
-async def api_auth_logout(request: Request):
-    """Clear application and admin login sessions."""
-    revoke_admin_session(request.cookies.get(ADMIN_COOKIE_NAME))
+async def api_auth_logout():
+    """Clear student/instructor login cookies."""
     response = JSONResponse({"ok": True})
     clear_auth_cookies(response)
     return response

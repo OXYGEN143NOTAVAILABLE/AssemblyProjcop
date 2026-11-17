@@ -1,22 +1,17 @@
 # AssemblyPC Backend
 
-FastAPI serves the built React application and APIs. PostgreSQL is the only source of component data.
+FastAPI serves the pages and APIs. PostgreSQL is the only source of component data.
 
 Full system documentation is available at `../SYSTEM_DOCUMENTATION.md`.
 
 ## Run
 
 ```bash
-cd frontend
-npm install
-npm run build
-cd ../backend
+cd backend
 pip install -r requirements.txt
 python scripts/setup_database.py
 python app.py
 ```
-
-For frontend development, run `npm run dev` from `frontend`; Vite proxies `/api` requests to FastAPI on port 5000.
 
 ## Pages
 
@@ -31,9 +26,8 @@ For frontend development, run `npm run dev` from `frontend`; Vite proxies `/api`
 - `database.py`: PostgreSQL connection
 - `schemas/database_schema.sql`: admin component tables and seed data
 - `scripts/setup_database.py`: creates database and loads schema
-- `../frontend/src/`: React application, built to `../frontend/static/app/`
-
-The files under `../frontend/templates/` and `../frontend/static/js/` are retained as migration references; the application page routes serve the React frontend.
+- `../frontend/templates/admin-dashboard.html`: admin CRUD UI
+- `../frontend/static/js/simulator.js`: simulator component loader and drag/drop logic
 
 ## Database Tables
 
