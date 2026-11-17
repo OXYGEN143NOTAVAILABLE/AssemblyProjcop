@@ -1,0 +1,7 @@
+{
+  "name": "assembly-pc-simulator",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}
