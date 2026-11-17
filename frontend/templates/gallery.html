@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery - Assembly PC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--green:#3ecf5e;--green-dark:#28a745;--navy:#0d1b2e;--bg:#f4f6f8;--border:#e2e8f0;--muted:#64748b}
+    body{font-family:Inter,sans-serif;background:var(--bg);color:#172033;min-height:100vh;overflow-x:hidden}
+    nav{height:64px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 48px;position:sticky;top:0;z-index:10}
+    .logo,.nav-links,.nav-link,.auth-btn{display:flex;align-items:center}
+    .logo{gap:10px;text-decoration:none;color:var(--navy);font-family:Sora,sans-serif;font-weight:800}
+    .logo-box{width:34px;height:34px;border-radius:9px;background:var(--green);display:grid;place-items:center;color:#fff}
+    .nav-links{gap:6px}
+    .nav-link{gap:7px;padding:8px 16px;border-radius:8px;color:#475569;text-decoration:none;font-size:14px;font-weight:600;min-width:0}
+    .nav-link:hover,.nav-link.active{background:#f0fdf4;color:#14532d}
+    .auth-btn{border:none;border-radius:8px;background:var(--navy);color:#fff;padding:9px 16px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
+    .auth-btn:hover{background:#1a2f4a}
+    main{max-width:1120px;margin:0 auto;padding:48px 24px}
+    .header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
+    h1{font-family:Sora,sans-serif;font-size:42px;color:var(--navy);line-height:1.1}
+    .sub{color:var(--muted);margin-top:10px;max-width:620px;line-height:1.6}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:18px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06);min-width:0}
+    .card h2{font-family:Sora,sans-serif;font-size:17px;color:var(--navy);margin-bottom:8px}
+    .meta{font-size:12px;color:#94a3b8;margin-bottom:14px}
+    .creator{font-size:12px;color:#475569;margin:-6px 0 14px;font-weight:700}
+    .creator span{color:var(--green-dark)}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .stat{border:1px solid var(--border);border-radius:7px;padding:9px;background:#f8fafc}
+    .stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:800}
+    .stat-value{font-size:14px;font-weight:800;color:#172033;margin-top:2px}
+    .empty{background:#fff;border:1px dashed #cbd5e1;border-radius:8px;padding:28px;text-align:center;color:var(--muted);grid-column:1/-1}
+    .actions{display:flex;gap:8px;margin-top:14px}
+    .react-btn{border:1px solid var(--border);background:#fff;border-radius:7px;padding:8px 10px;font-weight:800;cursor:pointer;color:#475569;text-decoration:none;font-size:13px;text-align:center;min-width:0}
+    .view-btn{background:var(--navy);border-color:var(--navy);color:#fff}
+    .view-btn:hover{background:#1a2f4a}
+    .react-btn.active{border-color:#ef4444;background:#fff1f2;color:#dc2626}
+    @media(max-width:900px){nav{height:auto;min-height:64px;padding:10px 18px;gap:10px;flex-wrap:wrap}.nav-links{order:3;width:100%;justify-content:center;flex-wrap:wrap}nav form{order:4;min-width:100%!important;max-width:none!important;margin:0!important}.auth-btn{margin-left:auto}.header{align-items:flex-start;flex-direction:column}h1{font-size:34px}}
+    @media(max-width:560px){nav{position:static;justify-content:center}.logo{width:100%;justify-content:center}.auth-btn{width:100%;justify-content:center}.nav-links{display:grid;grid-template-columns:1fr 1fr}.nav-link{justify-content:center;padding:9px 10px}main{padding:28px 16px}.grid{grid-template-columns:1fr}.actions{display:grid;grid-template-columns:1fr 1fr}.view-btn{grid-column:1/-1}.react-btn{width:100%}}
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="logo" href="/">
+      <span class="logo-box">PC</span>
+      <span>Assembly PC</span>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-link active" href="/gallery">Gallery</a>
+      <a class="nav-link" href="/simulator">Simulator</a>
+      <a class="nav-link" href="/profile">Profile</a>
+    </div>
+    <form action="/search" method="get" style="display:flex;align-items:center;min-width:220px;max-width:340px;flex:1;margin:0 18px;">
+      <input name="q" type="search" placeholder="Search builds or profiles..." style="width:100%;border:1px solid var(--border);background:#f8fafc;border-radius:8px;padding:9px 12px;font-size:13px;outline:none;" />
+    </form>
+    <a class="auth-btn" id="authBtn" href="/">Login / Sign Up</a>
+  </nav>
+
+  <main>
+    <div class="header">
+      <div>
+        <h1>Build Gallery</h1>
+        <p class="sub">Explore saved PC builds from the simulator. Guests can browse here freely; signing in unlocks the full simulator.</p>
+      </div>
+    </div>
+    <div class="grid" id="galleryGrid">
+      <div class="empty">Loading gallery...</div>
+    </div>
+  </main>
+
+  <script>
+    const grid = document.getElementById('galleryGrid');
+    const authBtn = document.getElementById('authBtn');
+
+    function formatDate(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+    }
+
+    function stat(label, value) {
+      return `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value || '-'}</div></div>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function numberFrom(value) {
+      const match = String(value || '').match(/(\d+(?:\.\d+)?)/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function componentWatts(component, fallback = 0) {
+      if (!component) return 0;
+      return Number(component.tdp_watts || component.tdp || component.watts || component.power_watts || component.power || numberFrom(component.tdp) || fallback) || 0;
+    }
+
+    function calculateBuildWatts(components) {
+      if (!components || typeof components !== 'object') return 0;
+      let total = 0;
+      if (components.cpu) total += componentWatts(components.cpu);
+      if (components.mb) total += componentWatts(components.mb, 50);
+      if (components.ram) total += componentWatts(components.ram, 5);
+      if (components.storage) total += componentWatts(components.storage, 5);
+      if (components.cooler) total += componentWatts(components.cooler, 5);
+      if (components.gpu) {
+        const gpuWatts = componentWatts(components.gpu);
+        const recommended = Number(components.gpu.recommended_psu_watts || numberFrom(components.gpu.psu));
+        total += gpuWatts || Math.max(recommended - 250, 75, 0);
+      }
+      return Math.round(total);
+    }
+
+    function getBuildTotalPowerValue(build) {
+      const stats = build?.build_data?.stats || build?.stats || {};
+      const apiTotal = Number(build?.total_power || build?.totalPower || stats.totalPower || stats.total_power || 0);
+      if (apiTotal > 0) return Math.round(apiTotal);
+      return calculateBuildWatts(build?.build_data?.components || build?.components || {});
+    }
+
+    function renderBuild(build) {
+      const stats = build.build_data && build.build_data.stats ? build.build_data.stats : {};
+      const score = stats.score || stats.grade || stats.compatibility || 'Saved';
+      const power = getBuildTotalPowerValue(build);
+      const buildId = build.id || build.build_id;
+      const creator = build.creator_name || build.user || build.build_data?.user || 'Unknown creator';
+      return `
+        <article class="card" id="build-${buildId}">
+          <h2>${escapeHtml(build.name || 'Untitled Build')}</h2>
+          <div class="meta">Saved ${formatDate(build.created_at)}</div>
+          <div class="creator">Created by <span>${escapeHtml(creator)}</span></div>
+          <div class="stats">
+            ${stat('Result', score)}
+            ${stat('Power', power ? `${power}W` : '-')}
+          </div>
+          <div class="actions">
+            <a class="react-btn view-btn" href="/simulator?build=${encodeURIComponent(buildId)}&readonly=1">View Build</a>
+            <button class="react-btn ${build.hearted ? 'active' : ''}" onclick="toggleReaction(${buildId}, 'heart', this)">Heart <span>${build.heartCount || 0}</span></button>
+            <button class="react-btn ${build.favorited ? 'active' : ''}" onclick="toggleReaction(${buildId}, 'favorite', this)">Favorite <span>${build.favoriteCount || 0}</span></button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function toggleReaction(buildId, action, btn) {
+      try {
+        const response = await fetch(`/api/builds/${buildId}/${action}`, { method: 'POST', credentials: 'same-origin' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.detail?.error || 'Please log in first.');
+        btn.classList.toggle('active', data.hearted || data.favorited);
+        const span = btn.querySelector('span');
+        if (span) span.textContent = data.heartCount ?? data.favoriteCount ?? 0;
+      } catch (err) {
+        window.location.href = '/?login_required=gallery';
+      }
+    }
+
+    async function loadAuth() {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        const data = await response.json();
+        if (data.user) {
+          authBtn.textContent = `Logout`;
+          authBtn.href = '/logout';
+        } else {
+          authBtn.href = '/';
+        }
+      } catch (err) {}
+    }
+
+    async function loadGallery() {
+      try {
+        const response = await fetch('/api/builds', { credentials: 'same-origin' });
+        const builds = await response.json();
+        if (!Array.isArray(builds) || builds.length === 0) {
+          grid.innerHTML = '<div class="empty">No saved builds yet.</div>';
+          return;
+        }
+        grid.innerHTML = builds.map(renderBuild).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="empty">Could not load gallery right now.</div>';
+      }
+    }
+
+    loadAuth();
+    loadGallery();
+    const adminComboKeys = new Set();
+    document.addEventListener('keydown', e => {
+      adminComboKeys.add(e.key.toLowerCase());
+      if (e.shiftKey && adminComboKeys.has('a') && adminComboKeys.has('d')) {
+        window.location.href = '/admin/login?back=/';
+      }
+    });
+    document.addEventListener('keyup', e => adminComboKeys.delete(e.key.toLowerCase()));
+  </script>
+</body>
+</html>
