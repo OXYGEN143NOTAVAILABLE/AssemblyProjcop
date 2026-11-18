@@ -26,18 +26,13 @@ AssemblyProjTest4/
 │   ├── .env                          # Environment variables (local)
 │   └── requirements.txt              # Python dependencies
 │
-├── frontend/                         # Frontend assets
-│   ├── templates/                    # HTML templates
-│   │   ├── homepage.html             # Home page
-│   │   ├── simulation.html           # PC simulator interface
-│   │   ├── admin-dashboard.html      # Admin panel
-│   │   ├── gallery.html              # Build gallery
-│   │   ├── profile.html              # User profile
-│   │   └── search.html               # Search interface
-│   └── static/                       # Static files
-│       ├── js/                       # JavaScript files
-│       ├── css/                      # Stylesheets (if any)
-│       └── assets/                   # Images and other assets
+├── frontend/                         # React + Vite application
+│   ├── index.html
+│   ├── src/                           # React pages, components, and API client
+│   ├── templates/                    # Retained legacy templates (not served)
+│   ├── static/                       # Built React assets and static files
+│   ├── package.json
+│   └── vite.config.js
 │
 ├── docs/                             # Documentation
 │   ├── SETUP_INSTRUCTIONS.md         # Quick setup guide
@@ -62,6 +57,7 @@ AssemblyProjTest4/
 ### Prerequisites
 
 - Python 3.8+
+- Node.js 18+ and npm
 - PostgreSQL 12+
 - Virtual environment (venv, conda, etc.)
 
@@ -94,6 +90,10 @@ AssemblyProjTest4/
 
 5. **Run the application**
    ```bash
+   cd ../frontend
+   npm install
+   npm run build
+   cd ../backend
    python app.py
    ```
 
@@ -105,6 +105,18 @@ AssemblyProjTest4/
    ```
 
    If another device cannot open it, allow Python/Uvicorn through Windows Firewall for private networks.
+
+### Frontend development
+
+Run the React dev server in one terminal; it proxies API requests to FastAPI on port 5000:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+For production or to use the frontend through FastAPI, build the React app with `npm run build`. FastAPI serves the built app for user-facing pages and keeps the existing `/api/*` endpoints as the backend.
 
 ## Database Schema Synchronization
 
@@ -305,6 +317,6 @@ For issues, questions, or suggestions, please:
 
 ---
 
-**Created**: May 2026  
-**Status**: Active Development  
+**Created**: May 2026
+**Status**: Active Development
 **Last Updated**: May 22, 2026

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ASSEMBLY PC</title>
+<title>ASSEMBLY PC · 3D Assembly Workstation</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -11,411 +11,256 @@
   --green:#3ecf5e;--green-dk:#28a745;--green-dim:rgba(62,207,94,.12);
   --navy:#0d1b2e;--navy2:#112240;--navy3:#1a2f4a;
   --slate:#1e293b;--slate2:#334155;--slate3:#475569;
-  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;
+  --bg:#0f172a;--panel:#ffffff;--border:#e2e8f0;
   --text:#0f172a;--muted:#64748b;--faint:#94a3b8;
   --red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
   --purple:#8b5cf6;--cyan:#06b6d4;
-  --sidebar:240px;--right:280px;--header:58px;
+  --sidebar:252px;--right:280px;--header:56px;
 }
-html{scroll-behavior:smooth;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
-button,input,select,textarea{min-width:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+button,input,select,textarea{min-width:0;font-family:inherit;}
 
 /* -- TOP BAR -- */
-.topbar{height:var(--header);flex-shrink:0;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:200;}
+.topbar{height:var(--header);flex-shrink:0;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:200;}
 .topbar-left{display:flex;align-items:center;gap:10px;min-width:0;}
-.back-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#94a3b8;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
+.back-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#94a3b8;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
 .back-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
 .back-btn svg{width:13px;height:13px;}
 .topbar-logo{display:flex;align-items:center;gap:8px;text-decoration:none;min-width:0;}
 .logo-box{width:28px;height:28px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;}
 .logo-name{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:#fff;white-space:nowrap;}
-.scenario-badge{display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:4px 10px;font-size:11px;color:#94a3b8;font-family:'DM Mono',monospace;min-width:0;}
-.scenario-badge span{color:var(--green);font-weight:600;}
-.mode-badge{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
-.mode-student{background:rgba(62,207,94,.18);color:var(--green);}
-.mode-instructor{background:rgba(251,191,36,.18);color:#fbbf24;}
+.scenario-badge{display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:4px 10px;font-size:11px;color:#94a3b8;font-family:'DM Mono',monospace;min-width:0;max-width:220px;}
+.scenario-badge span{color:var(--green);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 .topbar-center{display:flex;align-items:center;gap:6px;}
-.view-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 11px;border-radius:7px;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,.1);background:transparent;color:#94a3b8;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap;}
-.view-btn:hover{background:rgba(255,255,255,.07);color:#fff;}
-.view-btn.active{background:rgba(62,207,94,.15);border-color:rgba(62,207,94,.4);color:var(--green);}
+.view-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.12);background:transparent;color:#94a3b8;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.view-btn:hover{background:rgba(255,255,255,.08);color:#fff;}
+.view-btn.active{background:rgba(62,207,94,.16);border-color:rgba(62,207,94,.45);color:var(--green);}
 .view-btn svg{width:13px;height:13px;}
 
 .topbar-right{display:flex;align-items:center;gap:8px;min-width:0;}
-.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;text-decoration:none;white-space:nowrap;}
+.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
 .btn-sm svg{width:12px;height:12px;flex:0 0 12px;}
-.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:var(--green-dk);}
-.btn-ghost{background:rgba(255,255,255,.07);color:#94a3b8;border:1px solid rgba(255,255,255,.1);}.btn-ghost:hover{background:rgba(255,255,255,.13);color:#fff;}
-.btn-amber{background:#f59e0b;color:#fff;}.btn-amber:hover{background:#d97706;}
+.btn-green{background:var(--green);color:#052e16;}.btn-green:hover{background:#34b850;}
+.btn-ghost{background:rgba(255,255,255,.08);color:#cbd5e1;border:1px solid rgba(255,255,255,.12);}.btn-ghost:hover{background:rgba(255,255,255,.15);color:#fff;}
+.btn-amber{background:#f59e0b;color:#111827;}.btn-amber:hover{background:#d97706;}
 .btn-red{background:#ef4444;color:#fff;}.btn-red:hover{background:#dc2626;}
 .btn-blue{background:#3b82f6;color:#fff;}.btn-blue:hover{background:#2563eb;}
-.btn-purple{background:#8b5cf6;color:#fff;}.btn-purple:hover{background:#7c3aed;}
 .btn-toplink-green{background:rgba(62,207,94,.12);border:1px solid rgba(62,207,94,.35);color:var(--green);font-family:'Sora',sans-serif;font-weight:700;}
-.btn-toplink-green:hover{background:rgba(62,207,94,.2);border-color:rgba(62,207,94,.55);color:var(--green);}
-.btn-toplink-green svg{stroke:currentColor;}
-
-/* -- MAIN LAYOUT -- */
-.main{display:flex;flex:1;overflow:hidden;}
-
-/* -- LEFT SIDEBAR -- */
-.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
-.stab{flex:1;padding:8px 6px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.15;}
-.stab-icon{display:block;font-size:14px;line-height:1;}
-.stab.active{color:var(--green-dk);border-bottom-color:var(--green);}
-
-.sidebar-header{padding:10px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.sidebar-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:8px;}
-.cat-tabs{display:flex;flex-wrap:wrap;gap:3px;}
-.cat-tab{padding:4px 8px;border-radius:5px;font-size:10px;font-weight:600;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
-.cat-tab:hover{border-color:var(--green);color:var(--green-dk);}
-.cat-tab.active{background:var(--green);border-color:var(--green);color:#fff;}
-
-.sidebar-list{flex:1;overflow-y:auto;padding:6px;}
-.sidebar-list::-webkit-scrollbar{width:3px;}
-.sidebar-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-
-/* Component items */
-.comp-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:5px;cursor:grab;transition:all .15s;user-select:none;}
-.comp-item:hover{border-color:var(--green);box-shadow:0 2px 10px rgba(62,207,94,.15);transform:translateX(2px);}
-.comp-item:active{cursor:grabbing;}
-.comp-item.dragging{opacity:.35;}
-.comp-item.used{opacity:.5;background:#f8fafc;cursor:not-allowed;}
-.comp-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.comp-icon svg{width:16px;height:16px;}
-.comp-info{flex:1;min-width:0;}
-.comp-name{font-size:11px;font-weight:600;color:var(--slate);line-height:1.2;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.comp-sub{font-size:9px;color:var(--faint);}
-/* Cable items */
-.cable-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:5px;cursor:grab;transition:all .15s;user-select:none;}
-.cable-item:hover{border-color:var(--cyan);box-shadow:0 2px 10px rgba(6,182,212,.15);transform:translateX(2px);}
-.cable-item:active{cursor:grabbing;}
-.cable-item.dragging{opacity:.35;}
-.cable-item.connected{opacity:.5;background:#f0fdf4;border-color:#bbf7d0;cursor:not-allowed;}
-.cable-icon-wrap{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-
-/* Category colors */
-.cat-cpu{background:#fef3c7;color:#d97706;}
-.cat-mb{background:#dbeafe;color:#2563eb;}
-.cat-ram{background:#fce7f3;color:#db2777;}
-.cat-gpu{background:#f3e8ff;color:#7c3aed;}
-.cat-storage{background:#d1fae5;color:#059669;}
-.cat-psu{background:#fee2e2;color:#dc2626;}
-.cat-case{background:#e0e7ff;color:#4338ca;}
-.cat-cooler{background:#cffafe;color:#0e7490;}
-.cat-cable{background:#fef9c3;color:#854d0e;}
-
-/* -- CANVAS AREA -- */
-.canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
-.canvas-toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;}
-.canvas-toolbar-label{font-size:12px;font-weight:600;color:var(--slate);flex:1;}
-.hint-pill{display:flex;align-items:center;gap:5px;background:rgba(62,207,94,.08);border:1px solid rgba(62,207,94,.2);border-radius:100px;padding:4px 10px;font-size:10px;color:var(--green-dk);}
-.canvas-wrap{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px;gap:32px;}
-
-/* PC Case Canvas */
-.pc-case{width:560px;min-height:460px;background:#fff;border:2px solid #c8d6e5;border-radius:14px;position:relative;box-shadow:0 6px 28px rgba(0,0,0,.08);transition:all .3s;}
-.pc-case.drag-over{border-color:var(--green);box-shadow:0 0 0 3px rgba(62,207,94,.2);}
-.case-label{position:absolute;top:-10px;left:18px;background:#fff;padding:0 7px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border:1px solid var(--border);border-radius:4px;}
-
-/* Slots */
-.slot-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto auto;gap:8px;padding:24px 16px 16px;}
-.slot{border:2px dashed #d1dce8;border-radius:9px;min-height:75px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all .2s;position:relative;cursor:pointer;background:rgba(248,250,252,.6);}
-.slot:hover{border-color:var(--green);background:var(--green-dim);}
-.slot.drag-target{border-color:var(--green);background:var(--green-dim);transform:scale(1.02);}
-.slot.filled{border-style:solid;border-color:#c8d6e5;background:#f8fafc;cursor:default;}
-.slot.filled:hover{border-color:var(--green);transform:none;}
-.slot.error-slot{border-color:var(--red)!important;background:rgba(239,68,68,.05)!important;}
-.slot.cable-target{border-color:var(--cyan);background:rgba(6,182,212,.07);}
-.slot-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);position:absolute;top:5px;left:7px;}
-.slot-icon{width:26px;height:26px;opacity:.2;}
-.slot-empty-text{font-size:9px;color:var(--faint);}
-.slot-chip{display:flex;align-items:center;gap:7px;width:100%;padding:7px 9px;cursor:pointer;}
-.slot-chip-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.slot-chip-info{flex:1;min-width:0;}
-.slot-chip-name{font-size:10px;font-weight:700;color:var(--slate);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.slot-chip-sub{font-size:9px;color:var(--faint);}
-.slot-chip-remove{width:18px;height:18px;border-radius:4px;border:none;background:rgba(239,68,68,.1);color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;font-size:9px;}
-.slot-chip-remove:hover{background:rgba(239,68,68,.2);}
-.slot-wide{grid-column:1/-1;}
-.slot-tall{min-height:90px;}
-
-/* Component details popover */
-.component-popover{position:fixed;z-index:1300;width:min(330px,calc(100vw - 24px));max-height:min(430px,calc(100vh - 24px));display:none;background:#fff;border:1px solid #c8d6e5;border-radius:10px;box-shadow:0 18px 42px rgba(13,27,46,.22);overflow:hidden;}
-.component-popover.open{display:block;}
-.component-popover-header{display:flex;align-items:flex-start;gap:9px;padding:12px 13px 10px;border-bottom:1px solid var(--border);background:#f8fafc;}
-.component-popover-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 34px;}
-.component-popover-icon svg{width:17px;height:17px;}
-.component-popover-title{font-size:12px;font-weight:800;color:var(--slate);line-height:1.25;overflow-wrap:anywhere;}
-.component-popover-meta{font-size:10px;color:var(--faint);margin-top:2px;}
-.component-popover-close{margin-left:auto;width:22px;height:22px;border:0;border-radius:6px;background:rgba(239,68,68,.1);color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;}
-.component-popover-close:hover{background:rgba(239,68,68,.18);}
-.component-popover-body{padding:11px 13px;overflow:auto;max-height:340px;}
-.component-popover-desc{font-size:10px;color:var(--muted);line-height:1.45;margin-bottom:10px;}
-.component-spec-grid{display:grid;grid-template-columns:1fr;gap:5px;}
-.component-spec-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #eef2f7;}
-.component-spec-row:last-child{border-bottom:0;}
-.component-spec-label{font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--faint);flex:0 0 42%;}
-.component-spec-value{font-size:10px;font-weight:600;color:var(--slate);text-align:right;overflow-wrap:anywhere;min-width:0;}
-.slot-chip,.comp-item{touch-action:manipulation;}
-
-/* Cable status indicators on slots */
-.cable-badge{position:absolute;bottom:4px;right:4px;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;}
-.cable-badge.cb-ok{background:#d1fae5;color:#065f46;}
-.cable-badge.cb-needed{background:#fef3c7;color:#92400e;}
-
-/* Cable View */
-.cable-canvas{width:560px;min-height:460px;background:#0d1117;border:2px solid #1e293b;border-radius:14px;position:relative;box-shadow:0 6px 28px rgba(0,0,0,.25);padding:20px;}
-.cable-canvas.hide{display:none;}
-.pc-case.hide{display:none;}
-.cable-canvas-title{font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;}
-.cable-zone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.cable-zone{border:1px solid #1e293b;border-radius:8px;padding:10px 8px;text-align:center;background:#0a0f18;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .2s;position:relative;}
-.cable-zone.can-drop{border-color:var(--cyan);background:rgba(6,182,212,.06);}
-.cable-zone.connected{border-color:var(--green);background:rgba(62,207,94,.06);}
-.cable-zone-icon{width:38px;height:38px;margin-bottom:4px;}
-.cable-zone-name{font-size:10px;color:#64748b;font-weight:600;}
-.cable-zone-status{font-size:9px;font-weight:700;margin-top:2px;}
-.czs-ok{color:var(--green);}
-.czs-needed{color:var(--amber);}
-.czs-missing{color:var(--red);}
-.czs-locked{color:#334155;}
-
-/* Monitor / OS view */
-.monitor-wrap{width:600px;display:flex;flex-direction:column;align-items:center;}
-.monitor-bezel{background:#1a2535;border-radius:14px 14px 0 0;padding:8px 8px 0;border:3px solid #0f1824;width:100%;box-sizing:border-box;}
-.monitor-screen{width:100%;height:410px;background:#000;border-radius:6px 6px 0 0;overflow:hidden;position:relative;}
-.monitor-chin{width:100%;height:18px;background:linear-gradient(to bottom,#1a2535,#111d2b);border:3px solid #0f1824;border-top:none;display:flex;align-items:center;justify-content:center;}
-.monitor-chin-dot{width:6px;height:6px;border-radius:50%;background:#0f2744;}
-.monitor-stand-col{width:6px;height:32px;background:linear-gradient(to bottom,#111d2b,#0d1421);margin:0 auto;}
-.monitor-stand-base{width:180px;height:12px;background:linear-gradient(to bottom,#1a2535,#0d1421);border-radius:0 0 10px 10px;margin:0 auto;box-shadow:0 4px 14px rgba(0,0,0,.4);}
-.screen-content{width:100%;height:100%;overflow:hidden;}
-
-/* BIOS Screen */
-.bios-screen{background:#000080;color:#aaa;font-family:'DM Mono',monospace;font-size:11px;padding:12px;height:100%;overflow:hidden;}
-.bios-top{background:#aaa;color:#000080;padding:2px 8px;font-size:10px;font-weight:700;margin-bottom:8px;}
-.bios-section{margin-bottom:10px;}
-.bios-key{color:#fff;font-weight:700;}
-.bios-val{color:#ffff54;}
-.bios-err{color:#ff5555;animation:blink .8s infinite;}
-.bios-menu{margin-top:8px;}
-.bios-menu-item{padding:2px 8px;cursor:pointer;}
-.bios-menu-item.sel{background:#ffff54;color:#000;}
-.bios-menu-item:hover{background:#aaa;color:#000;}
-
-/* OS Boot Screen */
-.os-boot{background:#0078d4;color:#fff;font-family:'Sora',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;}
-.os-logo{font-size:48px;}
-.os-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.os-status{font-size:12px;color:rgba(255,255,255,.8);}
-
-/* Desktop screen */
-.desktop-screen{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);height:100%;display:flex;flex-direction:column;}
-.desktop-taskbar{background:rgba(0,0,0,.6);backdrop-filter:blur(10px);height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;margin-top:auto;}
-.desktop-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:rgba(255,255,255,.1);cursor:pointer;font-size:14px;transition:background .15s;}
-.desktop-icon:hover{background:rgba(255,255,255,.2);}
-.desktop-area{flex:1;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;}
-.desk-app{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:6px;transition:background .15s;}
-.desk-app:hover{background:rgba(255,255,255,.1);}
-.desk-app-icon{font-size:24px;}
-.desk-app-label{font-size:9px;color:rgba(255,255,255,.8);text-align:center;}
-
-/* Error/BSOD */
-.bsod{background:#1f77d0;color:#fff;font-family:'DM Mono',monospace;padding:20px;height:100%;display:flex;flex-direction:column;gap:12px;}
-.bsod-emoji{font-size:52px;}
-.bsod-title{font-size:16px;font-weight:700;}
-.bsod-msg{font-size:11px;color:rgba(255,255,255,.8);line-height:1.6;}
-.bsod-code{font-size:10px;color:rgba(255,255,255,.6);margin-top:8px;}
-
-/* -- RIGHT PANEL -- */
-.right-panel{width:var(--right);flex-shrink:0;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-.rpanel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
-.rpanel-tabs::-webkit-scrollbar{height:2px;}
-.rpanel-tab{flex-shrink:0;padding:10px 8px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
-.rpanel-tab.active{color:var(--green-dk);border-bottom-color:var(--green);}
-.rpanel-body{flex:1;overflow-y:auto;padding:14px;}
-.rpanel-body::-webkit-scrollbar{width:3px;}
-.rpanel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-
-/* Compatibility panel - always visible as sticky */
-.compat-sticky{background:var(--card);border-bottom:1px solid var(--border);padding:10px 14px;flex-shrink:0;max-height:180px;overflow-y:auto;}
-.compat-sticky::-webkit-scrollbar{width:3px;}
-.compat-sticky-title{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-.compat-box{border-radius:7px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:flex-start;gap:7px;font-size:10px;border:1px solid;}
-.compat-ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
-.compat-warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
-.compat-err{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
-.compat-box svg{width:12px;height:12px;flex-shrink:0;margin-top:1px;}
-
-/* Build info */
-.rp-section{margin-bottom:16px;}
-.rp-section-title{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-.build-row{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;border-radius:7px;border:1px solid var(--border);margin-bottom:4px;background:#f8fafc;position:relative;}
-.build-row.has-description{cursor:help;}
-.build-row.has-description::after{content:attr(data-description);position:absolute;left:0;top:calc(100% + 7px);width:100%;padding:9px 10px;border-radius:8px;background:var(--navy);color:#fff;font-size:10px;line-height:1.45;font-weight:500;box-shadow:0 12px 28px rgba(13,27,46,.24);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s ease,visibility 0s linear .15s;z-index:1400;text-align:left;}
-.build-row.has-description::before{content:"";position:absolute;left:18px;top:calc(100% - 4px);border:6px solid transparent;border-bottom-color:var(--navy);opacity:0;visibility:hidden;transition:opacity .15s ease,visibility 0s linear .15s;z-index:1401;}
-.build-row.has-description:hover::after,.build-row.has-description:hover::before{opacity:1;visibility:visible;transition-delay:.45s,0s;}
-.build-row-label{font-size:11px;color:var(--muted);font-weight:500;}
-.build-row-val{font-size:11px;font-weight:600;color:var(--slate);}
-.build-row-val.empty{color:var(--faint);font-weight:400;}
-.build-row-val.ok{color:var(--green-dk);}
-.build-row-val.err{color:var(--red);}
-
-
-/* Objectives */
-.obj-section-title{font-family:'Sora',sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:10px 0 6px;}
-.obj-item{display:flex;align-items:flex-start;gap:8px;padding:8px 9px;border-radius:7px;border:1px solid #fecaca;margin-bottom:4px;background:#fef2f2;}
-.obj-item.done{border-color:#bbf7d0;background:#f0fdf4;}
-.obj-content{min-width:0;overflow-wrap:anywhere;}
-.obj-check{width:16px;height:16px;border-radius:4px;border:2px solid var(--red);background:var(--red);color:#fff;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:10px;font-weight:800;}
-.obj-check.done{background:var(--green);border-color:var(--green);}
-.obj-check svg{display:none;width:8px;height:8px;}
-.obj-check.done svg{display:block;}
-.obj-check.done .obj-x{display:none;}
-.obj-text{font-size:11px;color:#991b1b;line-height:1.4;font-weight:600;}
-.obj-item.done .obj-text{color:#166534;}
-.obj-sub{font-size:9px;color:#b91c1c;line-height:1.35;margin-top:2px;}
-.obj-item.done .obj-sub{color:#059669;}
-
-/* Grade */
-.grade-box{border-radius:10px;padding:12px;text-align:left;background:linear-gradient(135deg,#0d1b2e 0%,#112240 100%);border:1px solid rgba(255,255,255,.08);margin-bottom:10px;box-shadow:0 6px 18px rgba(13,27,46,.18);}
-.grade-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;}
-.grade-pct{font-family:'Sora',sans-serif;font-size:clamp(24px,7vw,36px);line-height:1;font-weight:800;color:var(--green);white-space:nowrap;}
-.grade-label{font-size:11px;color:#94a3b8;margin-top:3px;overflow-wrap:anywhere;}
-.grade-breakdown{font-size:10px;color:#64748b;margin-top:6px;}
-.grade-progress{height:7px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden;margin-top:10px;}
-.grade-progress-fill{height:100%;border-radius:inherit;transition:width .25s ease;}
-#rtab-tasks .rp-section{display:flex;flex-direction:column;gap:8px;}
-#gradePreview{position:sticky;top:0;z-index:8;background:var(--card);padding-bottom:2px;}
-#objectivesList{min-width:0;}
-
-/* Troubleshoot panel */
-.trouble-item{padding:9px;border-radius:8px;border:1px solid var(--border);margin-bottom:5px;background:#f8fafc;cursor:pointer;transition:all .15s;}
-.trouble-item:hover{border-color:var(--red);background:rgba(239,68,68,.04);}
-.trouble-item.found{border-color:var(--amber);background:#fffbeb;}
-.trouble-item.fixed{border-color:var(--green);background:#f0fdf4;}
-.trouble-title{font-size:11px;font-weight:600;color:var(--slate);margin-bottom:3px;}
-.trouble-sub{font-size:10px;color:var(--muted);}
-.trouble-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;display:inline-block;margin-top:4px;}
-.tb-hw{background:#fee2e2;color:#991b1b;}
-.tb-sw{background:#dbeafe;color:#1e3a8a;}
-.tb-bios{background:#f3e8ff;color:#581c87;}
-
-/* Modals */
-.overlay{position:fixed;inset:0;z-index:999;background:rgba(13,27,46,.65);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
-.overlay.open{opacity:1;pointer-events:all;}
-.modal{background:#fff;border-radius:16px;padding:28px 32px;width:100%;max-width:480px;transform:translateY(16px) scale(.97);transition:transform .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 50px rgba(0,0,0,.18);position:relative;max-height:90vh;overflow-y:auto;}
-.overlay.open .modal{transform:none;}
-.modal-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:7px;background:#f4f6f8;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
-.modal-close:hover{background:#e2e8f0;}
-.modal-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--navy);margin-bottom:3px;}
-.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
-
-/* Installation step modal */
-.install-modal{max-width:560px;}
-.step-image-area{width:100%;height:200px;background:linear-gradient(135deg,#0d1b2e,#1a2f4a);border-radius:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-.step-svg-display{width:100%;height:100%;}
-.step-number{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;flex-shrink:0;}
-.step-title{font-size:14px;font-weight:700;color:var(--navy);}
-.step-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px;}
-.step-action-area{margin-top:14px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);}
-.step-action-btn{width:100%;padding:10px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
-.step-progress{display:flex;gap:4px;margin-top:12px;}
-.step-dot{flex:1;height:4px;border-radius:2px;background:#e2e8f0;transition:background .3s;}
-.step-dot.done{background:var(--green);}
-.step-dot.active{background:var(--amber);}
-
-/* Scenario form */
-.form-group{margin-bottom:12px;}
-.form-label{font-size:11px;font-weight:600;color:var(--slate);margin-bottom:4px;display:block;}
-.form-input,.form-select,.form-textarea{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(62,207,94,.1);}
-.form-textarea{resize:vertical;min-height:60px;}
-.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.obj-tag{display:inline-flex;align-items:center;gap:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;margin:2px;}
-.obj-tag button{background:none;border:none;color:#166534;cursor:pointer;font-size:12px;line-height:1;}
-
-/* Result modal */
-.result-task-row{display:flex;justify-content:space-between;padding:7px 10px;border-radius:7px;background:#f8fafc;margin-bottom:3px;font-size:12px;}
-.result-task-row.done-r{color:var(--green-dk);}
-.result-task-row.skip-r{color:var(--muted);}
-
-/* Toast */
-.toast{position:fixed;bottom:20px;right:20px;z-index:1200;background:var(--navy);color:#fff;border-radius:9px;padding:10px 16px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 8px 20px rgba(0,0,0,.2);transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.toast-ok{background:rgba(62,207,94,.2);}
-.toast-err{background:rgba(239,68,68,.2);}
-.toast-warn{background:rgba(245,158,11,.2);}
+.btn-toplink-green:hover{background:rgba(62,207,94,.22);}
 
 /* Power button */
-.power-controls{display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;}
-.power-btn{width:32px;height:32px;border-radius:50%;border:2px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:14px;}
-.power-btn.off{border-color:#334155;background:#1e293b;color:#475569;}
+.power-controls{display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;}
+.power-btn{width:28px;height:28px;border-radius:50%;border:2px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.power-btn.off{border-color:#475569;background:#1e293b;color:#94a3b8;}
 .power-btn.off:hover{border-color:var(--green);color:var(--green);}
-.power-btn.on{border-color:var(--green);background:rgba(62,207,94,.15);color:var(--green);animation:pulse-power 2s infinite;}
-@keyframes pulse-power{0%,100%{box-shadow:0 0 0 0 rgba(62,207,94,.3);}50%{box-shadow:0 0 0 6px rgba(62,207,94,.0);}}
-.power-label{font-size:10px;color:#64748b;font-weight:600;}
-@media(max-width:1100px){
-  html{height:auto;min-height:100%;overflow-y:auto;}
-  body{height:auto;min-height:100vh;min-height:100dvh;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-  .topbar{height:auto;min-height:58px;flex-wrap:wrap;align-items:flex-start;padding:10px;}
-  .topbar-left,.topbar-center,.topbar-right{width:100%;justify-content:center;flex-wrap:wrap;}
-  .topbar > form{min-width:100%!important;max-width:none!important;margin-top:4px;}
-  .main{display:block;overflow:visible;}
-  .sidebar{width:100%;max-height:420px;border-right:none;border-left:none;border-bottom:1px solid var(--border);}
-  .right-panel{width:100%;height:auto;min-height:0;max-height:none;border-right:none;border-left:none;border-bottom:1px solid var(--border);overflow:visible;}
-  .right-panel .compat-sticky{max-height:none;overflow:visible;}
-  .right-panel .rpanel-tabs{position:sticky;top:0;background:#fff;z-index:10;}
-  .right-panel .rpanel-body{display:block;flex:none;overflow:visible;padding-bottom:calc(32px + env(safe-area-inset-bottom));}
-  #gradePreview{top:38px;}
-  .canvas-area{min-height:620px;overflow:visible;}
-  .canvas-wrap{align-items:flex-start;}
-  .pc-case,.cable-canvas{width:min(560px,100%);}
-  .monitor-wrap{width:min(600px,100%);}
-}
-@media(max-width:680px){
-  .topbar-left,.topbar-center,.topbar-right{justify-content:flex-start;}
-  .topbar{gap:8px;padding:8px;}
-  .topbar-left{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .topbar-logo,.back-btn{width:100%;}
-  .topbar-logo{justify-content:center;}
-  .topbar > form{min-width:100%!important;max-width:none!important;order:2;}
-  .topbar-center{order:3;display:grid;grid-template-columns:1fr 1fr;width:100%;gap:6px;}
-  .topbar-center .view-btn{min-width:0;width:100%;justify-content:center;}
-  #btnMonitor{grid-column:1/-1;}
-  .topbar-right{order:4;display:grid;grid-template-columns:1fr 1fr;width:100%;gap:6px;}
-  .view-btn,.btn-sm{min-width:0;justify-content:center;}
-  .btn-sm{width:100%;padding:9px 10px;min-height:38px;}
-  .power-controls{grid-column:1/-1;justify-content:center;width:100%;padding:8px 10px;}
-  .scenario-badge{grid-column:1/-1;width:100%;justify-content:center;}
-  .sidebar,.right-panel{max-height:none;}
-  .right-panel{overflow:visible;}
-  .rpanel-body{padding:12px 12px calc(44px + env(safe-area-inset-bottom));}
-  .obj-item{padding:8px;border-radius:9px;}
-  .obj-text{font-size:10px;line-height:1.35;}
-  .obj-sub{font-size:9px;}
-  .grade-box{padding:10px;border-radius:9px;}
-  .sidebar-tabs{position:sticky;top:0;background:#fff;z-index:5;}
-  .cat-tabs{display:grid;grid-template-columns:repeat(2,1fr);}
-  .cat-tab{width:100%;}
-  .canvas-toolbar{flex-wrap:wrap;}
-  .hint-pill{width:100%;justify-content:center;}
-  .slot-grid,.cable-zone-grid,.form-row{grid-template-columns:1fr;}
-  .pc-case,.cable-canvas{min-width:0;width:100%;min-height:auto;}
-  .slot{min-height:70px;}
-  .canvas-wrap{padding:14px;gap:16px;}
-  .monitor-screen{height:320px;}
-  .monitor-stand-base{width:140px;}
-  .modal{max-width:none;width:calc(100vw - 24px);padding:22px 18px;}
+.power-btn.on{border-color:var(--green);background:rgba(62,207,94,.18);color:var(--green);box-shadow:0 0 10px rgba(62,207,94,.35);}
+.power-label{font-size:10px;color:#94a3b8;font-weight:700;font-family:'DM Mono',monospace;}
+
+/* -- MAIN 3-PANE WORKSTATION LAYOUT -- */
+.main{display:flex;flex:1;min-height:0;overflow:hidden;}
+
+/* -- LEFT SIDEBAR -- */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:20;}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.stab{flex:1;padding:9px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.stab.active{color:var(--green-dk);border-bottom-color:var(--green);}
+
+.sidebar-header{padding:10px 11px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:7px;}
+.cat-tabs{display:flex;flex-wrap:wrap;gap:3px;}
+.cat-tab{padding:4px 7px;border-radius:5px;font-size:10px;font-weight:600;border:1px solid var(--border);background:#f8fafc;color:var(--muted);cursor:pointer;transition:all .12s;}
+.cat-tab:hover{border-color:var(--green);color:var(--green-dk);}
+.cat-tab.active{background:var(--green);border-color:var(--green);color:#052e16;font-weight:700;}
+
+.sidebar-list{flex:1;overflow-y:auto;padding:7px;}
+.sidebar-list::-webkit-scrollbar{width:4px;}
+.sidebar-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+.comp-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:5px;cursor:pointer;transition:border-color .12s,box-shadow .12s;}
+.comp-item:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(62,207,94,.14);}
+.comp-item.active-part{border-color:var(--blue);background:#f8fbff;}
+.comp-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'DM Mono',monospace;}
+.comp-info{flex:1;min-width:0;}
+.comp-name{font-size:11px;font-weight:700;color:var(--slate);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.comp-sub{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.comp-pill{font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;background:#dbeafe;color:#1d4ed8;flex-shrink:0;}
+.comp-inspect-btn{height:20px;padding:0 5px;border-radius:5px;border:1px solid var(--border);background:#ecfdf5;color:var(--green-dk);font-size:9px;font-weight:800;cursor:pointer;flex-shrink:0;}
+.comp-inspect-btn:hover{border-color:var(--green);background:#dcfce7;color:#166534;}
+.comp-specs-btn{width:20px;height:20px;border-radius:5px;border:1px solid var(--border);background:#f8fafc;color:var(--slate2);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.comp-specs-btn:hover{border-color:var(--blue);color:var(--blue);background:#eff6ff;}
+
+.cable-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:6px;}
+.cable-item.connected{background:#f0fdf4;border-color:#bbf7d0;}
+.cable-swatch{width:10px;height:34px;border-radius:4px;flex-shrink:0;}
+
+/* Category colors */
+.cat-cpu{background:#fef3c7;color:#b45309;}
+.cat-mb{background:#dbeafe;color:#1d4ed8;}
+.cat-ram{background:#fce7f3;color:#be185d;}
+.cat-gpu{background:#f3e8ff;color:#6d28d9;}
+.cat-storage{background:#d1fae5;color:#047857;}
+.cat-psu{background:#fee2e2;color:#b91c1c;}
+.cat-case{background:#e0e7ff;color:#3730a3;}
+.cat-cooler{background:#cffafe;color:#0e7490;}
+
+/* -- CENTER 3D VIEWPORT -- */
+.canvas-area{flex:1;position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;background:#101826;overflow:hidden;}
+.sim3d-stage{position:relative;flex:1;display:flex;min-width:0;min-height:0;overflow:hidden;}
+#sim3dViewport{position:absolute;inset:0;width:100%;height:100%;}
+
+/* Compact Top HUD Overlays inside 3D Viewport (Zero backdrop-filter!) */
+.vp-top-hud{position:absolute;top:10px;left:12px;right:12px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;pointer-events:none;z-index:30;}
+.vp-hud-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap;pointer-events:auto;background:rgba(13,27,46,.88);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:4px 6px;}
+.cam-btn{padding:5px 9px;border-radius:6px;border:1px solid transparent;background:transparent;color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;}
+.cam-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+.cam-btn.active{background:rgba(62,207,94,.2);border-color:rgba(62,207,94,.45);color:#86efac;}
+.seq-select{background:#112240;color:#e2e8f0;border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;outline:none;cursor:pointer;}
+
+.sim-status-pill{pointer-events:none;background:rgba(13,27,46,.9);border:1px solid rgba(255,255,255,.14);color:#cbd5e1;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:500;max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-status-pill.pill-ok{border-color:rgba(62,207,94,.6);color:#86efac;background:rgba(5,46,22,.92);}
+.sim-status-pill.pill-warn{border-color:rgba(245,158,11,.6);color:#fde68a;background:rgba(69,26,3,.92);}
+.sim-status-pill.pill-err{border-color:rgba(239,68,68,.65);color:#fecaca;background:rgba(69,10,10,.92);}
+
+/* Contextual Selected Part Action Bar (Bottom-Center of 3D Viewport) */
+.selected-action-bar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:35;width:min(640px,calc(100% - 24px));background:rgba(13,27,46,.94);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;color:#f8fafc;box-shadow:0 12px 28px rgba(0,0,0,.45);display:none;}
+.selected-action-bar.visible{display:block;}
+.ab-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;}
+.ab-slot{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#38bdf8;margin-right:6px;}
+.ab-title{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:#fff;}
+.ab-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;}
+.ab-badge-ok{background:rgba(62,207,94,.2);color:#86efac;}
+.ab-badge-blue{background:rgba(59,130,246,.22);color:#93c5fd;}
+.ab-badge-warn{background:rgba(245,158,11,.22);color:#fde68a;}
+.ab-badge-muted{background:rgba(148,163,184,.18);color:#cbd5e1;}
+.ab-hint{font-size:11px;color:#fde68a;margin-bottom:7px;line-height:1.35;}
+.ab-hint.ab-hint-info{color:#7dd3fc;}
+.ab-actions{display:flex;flex-wrap:wrap;gap:6px;}
+.ab-btn{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;}
+.ab-btn:hover{background:rgba(255,255,255,.18);color:#fff;}
+.ab-btn.ab-primary{background:#2563eb;border-color:#3b82f6;color:#fff;}.ab-btn.ab-primary:hover{background:#1d4ed8;}
+.ab-btn.ab-green{background:#22c55e;border-color:#3ecf5e;color:#052e16;font-weight:700;}.ab-btn.ab-green:hover{background:#16a34a;color:#fff;}
+.ab-btn.ab-accent{background:#0ea5e9;border-color:#38bdf8;color:#082f49;font-weight:700;}
+.ab-btn.ab-danger{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.4);color:#fca5a5;}.ab-btn.ab-danger:hover{background:#ef4444;color:#fff;}
+
+/* Monitor Screen Preview */
+.monitor-stage{flex:1;display:none;align-items:center;justify-content:center;padding:24px;background:#0b1220;}
+.monitor-wrap{width:min(680px,100%);display:flex;flex-direction:column;align-items:center;}
+.monitor-bezel{background:#1a2535;border-radius:14px 14px 0 0;padding:10px 10px 0;border:3px solid #0f1824;width:100%;}
+.monitor-screen{width:100%;height:420px;background:#000;border-radius:6px 6px 0 0;overflow:hidden;}
+.monitor-chin{width:100%;height:18px;background:#1a2535;border:3px solid #0f1824;border-top:none;}
+.monitor-stand-col{width:14px;height:36px;background:#111d2b;}
+.monitor-stand-base{width:190px;height:12px;background:#1a2535;border-radius:0 0 10px 10px;}
+.screen-content{width:100%;height:100%;}
+.bios-screen{background:#000080;color:#d8dee9;font-family:'DM Mono',monospace;font-size:12px;padding:16px;height:100%;}
+.bios-top{background:#cbd5e1;color:#0f172a;padding:4px 8px;font-weight:700;margin-bottom:10px;}
+
+/* -- RIGHT PANEL (NON-BLOCKING GUIDE + BUILD LIST) -- */
+.right-panel{width:var(--right);flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:20;}
+.rpanel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.rpanel-tab{flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;}
+.rpanel-tab.active{color:var(--green-dk);border-bottom-color:var(--green);}
+.rpanel-body{flex:1;overflow-y:auto;padding:12px;}
+.rpanel-body::-webkit-scrollbar{width:4px;}
+.rpanel-body::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+.rp-section{margin-bottom:16px;}
+.rp-section-title{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
+.build-row{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;border-radius:7px;border:1px solid var(--border);margin-bottom:4px;background:#f8fafc;}
+.build-row.selected-row{border-color:var(--blue);background:#eff6ff;}
+.build-row-label{font-size:10px;color:var(--muted);font-weight:600;}
+.build-row-val{font-size:11px;font-weight:700;color:var(--slate);}
+.build-row-val.empty{color:var(--faint);font-weight:400;}
+.build-row-val.ok{color:var(--green-dk);}
+
+.guide-step{padding:8px 9px;border-radius:7px;border:1px solid var(--border);background:#f8fafc;margin-bottom:6px;}
+.guide-step.done{border-color:#bbf7d0;background:#f0fdf4;}
+.guide-step-title{font-size:11px;font-weight:700;color:var(--slate);}
+.guide-step.done .guide-step-title{color:#166534;}
+.guide-step-desc{font-size:10px;color:var(--muted);line-height:1.4;margin-top:3px;}
+
+/* Modals (solid scrim, no backdrop-filter over WebGL canvas) */
+.overlay{position:fixed;inset:0;z-index:999;background:rgba(10,18,32,.76);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:14px;padding:24px 26px;width:100%;max-width:540px;box-shadow:0 24px 50px rgba(0,0,0,.35);position:relative;max-height:90vh;overflow-y:auto;}
+.modal-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:7px;background:#f1f5f9;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:#e2e8f0;}
+.modal-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+
+/* Post-Assembly Assessment Breakdown */
+.grade-box{border-radius:10px;padding:13px;background:linear-gradient(135deg,#0d1b2e 0%,#112240 100%);color:#fff;margin-bottom:12px;}
+.grade-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.grade-pct{font-family:'Sora',sans-serif;font-size:32px;line-height:1;font-weight:800;}
+.grade-label{font-size:12px;font-weight:600;color:#e2e8f0;margin-top:4px;}
+.grade-breakdown{font-size:11px;color:#94a3b8;margin-top:8px;line-height:1.4;}
+.grade-progress{height:7px;background:rgba(255,255,255,.14);border-radius:999px;overflow:hidden;margin-top:10px;}
+.grade-progress-fill{height:100%;border-radius:inherit;}
+
+.val-sec{margin-bottom:11px;}
+.val-sec-title{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:5px;}
+.val-sec-title span{color:var(--muted);font-weight:500;}
+.val-row{padding:7px 9px;border-radius:7px;font-size:11px;margin-bottom:4px;border:1px solid;line-height:1.4;}
+.val-err{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+.val-warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+.val-ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
+.val-empty{font-size:11px;padding:7px 9px;border-radius:7px;}
+.val-empty.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.val-empty.muted{background:#f8fafc;color:var(--muted);border:1px solid var(--border);}
+
+/* Scenario Form */
+.form-group{margin-bottom:11px;}
+.form-label{font-size:11px;font-weight:600;color:var(--slate);margin-bottom:4px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;color:var(--text);background:#fff;outline:none;}
+.form-textarea{resize:vertical;min-height:60px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.obj-tag{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;margin:2px;}
+.obj-tag button{background:none;border:none;color:#166534;cursor:pointer;font-size:12px;}
+
+/* Component Specs Popover */
+.component-popover{position:fixed;z-index:1300;width:min(330px,calc(100vw - 24px));max-height:min(420px,calc(100vh - 24px));display:none;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 18px 42px rgba(13,27,46,.32);overflow:hidden;}
+.component-popover.open{display:block;}
+.component-popover-header{display:flex;align-items:flex-start;gap:9px;padding:11px 12px;border-bottom:1px solid var(--border);background:#f8fafc;}
+.component-popover-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:0 0 32px;}
+.component-popover-title{font-size:12px;font-weight:800;color:var(--slate);}
+.component-popover-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.component-popover-close{margin-left:auto;width:22px;height:22px;border:0;border-radius:6px;background:rgba(239,68,68,.1);color:var(--red);cursor:pointer;font-size:14px;line-height:1;}
+.component-popover-body{padding:10px 12px;overflow:auto;max-height:330px;}
+.component-popover-desc{font-size:10px;color:var(--muted);line-height:1.45;margin-bottom:9px;}
+.component-spec-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7;}
+.component-spec-label{font-size:9px;font-weight:800;text-transform:uppercase;color:var(--faint);}
+.component-spec-value{font-size:10px;font-weight:600;color:var(--slate);text-align:right;}
+
+/* Standalone 3D Hardware Inspector Modal */
+.inspector-modal{max-width:720px;padding:20px 22px;background:#0d1b2e;color:#f8fafc;border:1px solid rgba(255,255,255,.14);}
+.inspector-modal .modal-title{color:#fff;}
+.inspector-modal .modal-sub{color:#94a3b8;margin-bottom:10px;}
+.inspector-modal .modal-close{background:rgba(255,255,255,.1);color:#cbd5e1;}
+.inspector-modal .modal-close:hover{background:rgba(255,255,255,.2);color:#fff;}
+.inspector-viewport{width:100%;height:340px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:#081220;position:relative;}
+.inspector-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;}
+.inspector-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
+.inspector-tip{margin-top:10px;padding:9px 12px;border-radius:8px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#bae6fd;font-size:11px;line-height:1.45;}
+
+/* Toast */
+.toast{position:fixed;bottom:18px;right:18px;z-index:1200;background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:9px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 10px 24px rgba(0,0,0,.3);transform:translateY(16px);opacity:0;transition:all .25s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.toast-ok{background:rgba(62,207,94,.22);color:#86efac;}
+.toast-err{background:rgba(239,68,68,.22);color:#fca5a5;}
+.toast-warn{background:rgba(245,158,11,.22);color:#fde68a;}
+
+@media(max-width:1080px){
+  html,body{height:auto;overflow:auto;}
+  .main{flex-direction:column;overflow:visible;}
+  .sidebar,.right-panel{width:100%;max-height:360px;}
+  .canvas-area{min-height:540px;}
 }
 </style>
 </head>
 <body>
 
-<!-- -------------- TOP BAR -------------- -->
 <div class="topbar">
   <div class="topbar-left">
     <a href="/" class="back-btn">
@@ -424,338 +269,208 @@ button,input,select,textarea{min-width:0;}
     </a>
     <a href="/" class="topbar-logo">
       <div class="logo-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" width="14" height="14"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#052e16" stroke-width="2.4" stroke-linecap="round" width="15" height="15"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
       </div>
       <span class="logo-name">Assembly PC</span>
     </a>
-    <div class="scenario-badge"><span id="scenarioLabel">Simulator</span></div>
+    <div class="scenario-badge"><span id="scenarioLabel">3D Assembly Lab</span></div>
   </div>
 
-  <form action="/search" method="get" style="display:flex;align-items:center;min-width:220px;max-width:320px;flex:1;">
-    <input name="q" type="search" placeholder="Search builds or profiles..." style="width:100%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;" />
-  </form>
-
   <div class="topbar-center">
-    <button class="view-btn active" id="btnFront" onclick="switchView('front')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
-      Build
+    <button class="view-btn active" id="btnFront" onclick="window.simApp?.switchView('3d')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      3D Workstation
     </button>
-    <button class="view-btn" id="btnCable" onclick="switchView('cable')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      Cables
-    </button>
-    <button class="view-btn" id="btnMonitor" onclick="switchView('monitor')">
+    <button class="view-btn" id="btnMonitor" onclick="window.simApp?.switchView('monitor')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-      Monitor
+      Monitor / POST
     </button>
   </div>
 
   <div class="topbar-right">
-    <a href="/profile" class="btn-sm btn-toplink-green" id="profileTopLink">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
-    </a>
-    <a href="/logout" class="btn-sm btn-ghost" id="logoutTopLink">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Logout
-    </a>
+    <a href="/profile" class="btn-sm btn-toplink-green">Profile</a>
+    <a href="/logout" class="btn-sm btn-ghost">Logout</a>
 
-    <!-- Power controls -->
     <div class="power-controls">
       <span class="power-label" id="powerLabel">OFF</span>
-      <button class="power-btn off" id="powerBtn" onclick="togglePower()" title="Power On/Off">?</button>
+      <button class="power-btn off" id="powerBtn" onclick="window.simApp?.togglePower()" title="Power On / Off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" width="13" height="13"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+      </button>
     </div>
 
-    <button class="btn-sm btn-amber" onclick="openScenarioModal()" id="btnScenario" style="display:none;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      Scenario
-    </button>
-    <button class="btn-sm btn-green" onclick="openSubmitModal()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/></svg>
-      Submit
-    </button>
-    <button class="btn-sm btn-ghost" onclick="openClearConfirm()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-      Clear
-    </button>
+    <button class="btn-sm btn-amber" id="btnScenario" onclick="window.simApp?.openScenarioModal()" style="display:none;">Scenario</button>
+    <button class="btn-sm btn-green" id="btnValidateSubmit" onclick="window.simApp?.openSubmitModal()">Validate & Submit</button>
+    <button class="btn-sm btn-ghost" id="btnClearBuild" onclick="window.simApp?.openClearConfirm()">Clear</button>
   </div>
 </div>
 
-<!-- -------------- MAIN -------------- -->
 <div class="main">
-
-  <!-- -- LEFT SIDEBAR (split: components + cables) -- -->
-  <div class="sidebar">
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
     <div class="sidebar-tabs">
-      <button class="stab active" id="stab-comp" onclick="switchSTab('comp',this)">🔧 Components</button>
-      <button class="stab" id="stab-cable" onclick="switchSTab('cable',this)">🔌 Cables</button>
-      <button class="stab" id="stab-builds" onclick="switchSTab('builds',this)">💾 Builds</button>
+      <button class="stab active" id="stab-comp" onclick="window.simApp?.switchSTab('comp',this)">Components</button>
+      <button class="stab" id="stab-cable" onclick="window.simApp?.switchSTab('cable',this)">Cables</button>
+      <button class="stab" id="stab-builds" onclick="window.simApp?.switchSTab('builds',this)">Builds</button>
     </div>
 
-    <!-- Components panel -->
     <div id="spanel-comp" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
       <div class="sidebar-header">
-        <div class="sidebar-title">Component Library</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <div style="position:relative;flex:1;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--faint);"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" id="compSearch" placeholder="Search components..." oninput="onCompSearchChange(this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px 6px 30px;font-size:11px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:all .15s;"/>
-          </div>
-          <button id="clearCompSearch" onclick="clearComponentSearch()" style="display:none;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;transition:all .15s;" title="Clear search">✕</button>
+        <div class="sidebar-title">Hardware Catalog</div>
+        <div style="display:flex;gap:5px;margin-bottom:7px;">
+          <input type="text" id="compSearch" placeholder="Search parts or sockets..." oninput="window.simApp?.onCompSearchChange(this.value)" style="flex:1;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;outline:none;"/>
+          <button id="clearCompSearch" onclick="window.simApp?.clearComponentSearch()" style="display:none;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:11px;">x</button>
         </div>
         <div class="cat-tabs" id="catTabs">
-          <button class="cat-tab active" onclick="filterCat('all',this)">All</button>
-          <button class="cat-tab" onclick="filterCat('cpu',this)">CPU</button>
-          <button class="cat-tab" onclick="filterCat('mb',this)">MB</button>
-          <button class="cat-tab" onclick="filterCat('ram',this)">RAM</button>
-          <button class="cat-tab" onclick="filterCat('gpu',this)">GPU</button>
-          <button class="cat-tab" onclick="filterCat('storage',this)">Storage</button>
-          <button class="cat-tab" onclick="filterCat('psu',this)">PSU</button>
-          <button class="cat-tab" onclick="filterCat('cooler',this)">Cooler</button>
-          <button class="cat-tab" onclick="filterCat('case',this)">Case</button>
+          <button class="cat-tab active" onclick="window.simApp?.filterCat('all',this)">All</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('case',this)">Case</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('mb',this)">MB</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('cpu',this)">CPU</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('cooler',this)">Cooler</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('ram',this)">RAM</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('gpu',this)">GPU</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('storage',this)">Storage</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('psu',this)">PSU</button>
+          <button class="cat-tab" onclick="window.simApp?.filterCat('case_fan',this)">Fan</button>
         </div>
       </div>
       <div class="sidebar-list" id="sidebarList"></div>
     </div>
 
-    <!-- Cables panel -->
-    <div id="spanel-cable" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
+    <div id="spanel-cable" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="sidebar-header">
-        <div class="sidebar-title">Cable Library</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;">Drag cables to Cables view to connect</div>
+        <div class="sidebar-title">Internal Power & Data Cables</div>
+        <div style="font-size:10px;color:var(--muted);">Open Case Side Panel to route 3D cables</div>
       </div>
       <div class="sidebar-list" id="cableList"></div>
     </div>
 
-    <!-- Builds panel (Load saved builds from database) -->
-    <div id="spanel-builds" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
+    <div id="spanel-builds" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="sidebar-header">
-        <div class="sidebar-title">Saved Builds</div>
-        <button class="btn-sm btn-green" id="saveCurrentBuildBtn" onclick="saveCurrentBuild()" style="width:100%;margin-top:8px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
-          Save Current Build
-        </button>
-        <button class="btn-sm btn-green" id="refreshBuildsBtn" onclick="refreshBuildsList()" style="width:100%;margin-top:8px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Refresh Builds
-        </button>
-      </div>
-      <div class="sidebar-list" id="buildsList" style="gap:8px;">
-        <div style="font-size:10px;color:var(--muted);text-align:center;padding:20px;">
-          Loading builds from database...
+        <div class="sidebar-title">Saved 3D Builds</div>
+        <div style="display:flex;gap:5px;margin-top:6px;">
+          <button class="btn-sm btn-green" id="saveCurrentBuildBtn" onclick="window.simApp?.saveCurrentBuild()" style="flex:1;">Save Build</button>
+          <button class="btn-sm btn-ghost" id="refreshBuildsBtn" onclick="window.simApp?.refreshBuildsList()" style="color:var(--slate);background:#f1f5f9;border-color:var(--border);">Refresh</button>
         </div>
       </div>
+      <div class="sidebar-list" id="buildsList"></div>
     </div>
-  </div>
+  </aside>
 
-  <!-- -- CANVAS -- -->
-  <div class="canvas-area">
-    <div class="canvas-toolbar">
-      <span class="canvas-toolbar-label" id="canvasLabel">PC Build Assembly � Components</span>
-      <div class="hint-pill" id="hintPill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="11" height="11"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-        <span id="hintText">Drag components from the left panel onto slots</span>
-      </div>
-    </div>
-    <div class="canvas-wrap" id="canvasWrap">
+  <!-- CENTER 3D WORKSPACE -->
+  <main class="canvas-area">
+    <div class="sim3d-stage" id="sim3dStage">
+      <div id="sim3dViewport"></div>
 
-      <!-- FRONT VIEW: PC Case -->
-      <div class="pc-case" id="pcCase" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropOnCase(event)">
-        <div class="case-label">PC CASE</div>
-        <div class="slot-grid">
-          <!-- Motherboard (wide, tall) -->
-          <div class="slot slot-wide slot-tall" id="slot-mb" data-type="mb" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'mb')">
-            <div class="slot-label">Motherboard</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h.01M12 7h.01M17 7h.01M7 12h10M7 17h10"/></svg>
-            <span class="slot-empty-text">Drop Motherboard here</span>
-          </div>
-          <!-- CPU -->
-          <div class="slot" id="slot-cpu" data-type="cpu" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'cpu')">
-            <div class="slot-label">CPU</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
-            <span class="slot-empty-text">Drop CPU</span>
-          </div>
-          <!-- Cooler -->
-          <div class="slot" id="slot-cooler" data-type="cooler" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'cooler')">
-            <div class="slot-label">Cooler</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
-            <span class="slot-empty-text">Drop Cooler</span>
-          </div>
-          <!-- RAM -->
-          <div class="slot" id="slot-ram" data-type="ram" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'ram')">
-            <div class="slot-label">RAM</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="2" y="8" width="20" height="8" rx="2"/><path d="M6 8V6M10 8V6M14 8V6M18 8V6"/></svg>
-            <span class="slot-empty-text">Drop RAM</span>
-          </div>
-          <!-- GPU -->
-          <div class="slot" id="slot-gpu" data-type="gpu" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'gpu')">
-            <div class="slot-label">GPU</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/></svg>
-            <span class="slot-empty-text">Drop GPU</span>
-          </div>
-          <!-- Storage -->
-          <div class="slot" id="slot-storage" data-type="storage" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'storage')">
-            <div class="slot-label">Storage</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
-            <span class="slot-empty-text">Drop Storage</span>
-          </div>
-          <!-- PSU (wide) -->
-          <div class="slot slot-wide" id="slot-psu" data-type="psu" ondragover="allowDrop(event,this)" ondragleave="leaveDrop(event,this)" ondrop="dropOnSlot(event,'psu')">
-            <div class="slot-label">PSU</div>
-            <svg class="slot-icon" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span class="slot-empty-text">Drop PSU</span>
-          </div>
+      <!-- Compact Top Camera + Panel HUD -->
+      <div class="vp-top-hud">
+        <div class="vp-hud-group" id="camPresetBar">
+          <button class="cam-btn active" data-cam="default" onclick="window.simApp?.setCameraPreset('default')">Workstation</button>
+          <button class="cam-btn" data-cam="interior" onclick="window.simApp?.setCameraPreset('interior')">Case Interior</button>
+          <button class="cam-btn" data-cam="bench" onclick="window.simApp?.setCameraPreset('bench')">Prep Pad</button>
+          <button class="cam-btn" data-cam="psu" onclick="window.simApp?.setCameraPreset('psu')">PSU & Drives</button>
+          <button class="cam-btn" data-cam="rear" onclick="window.simApp?.setCameraPreset('rear')">Rear I/O</button>
+          <button class="cam-btn" id="togglePanelBtn" onclick="window.simApp?.toggleSidePanel()">Side Panel: Closed</button>
+          <button class="cam-btn active" id="btnTogglePorts" onclick="window.simApp?.toggleCablePorts()" title="Show or hide 3D clickable cable headers inside case">Ports: On</button>
+          <select class="seq-select" id="sequencePresetSelect" onchange="window.simApp?.setSequencePreset(this.value)" title="Assembly Procedure Order">
+            <option value="bench_first">Guide: Bench-First</option>
+            <option value="case_first">Guide: Case-First</option>
+            <option value="freeform">Guide: Open Lab</option>
+          </select>
+          <select class="seq-select" id="faultLabSelect" onchange="window.simApp?.onFaultLabChange(this.value)" title="Load Pre-Built Troubleshooting Lab">
+            <option value="">Lab: Standard Build</option>
+            <option value="fault_no_post_orientation">Fault Lab 1: No-POST &amp; Airflow</option>
+            <option value="fault_memory_power_mismatch">Fault Lab 2: Memory &amp; Cables</option>
+          </select>
+          <button class="cam-btn active" id="btnSfxToggle" onclick="window.simApp?.toggleMute()" title="Toggle synthesized tactile sound effects">SFX: On</button>
+        </div>
+
+        <div class="sim-status-pill" id="liveStatusPill">
+          Open Side Panel to access case interior, or stage Motherboard on ESD Prep Pad
         </div>
       </div>
 
-      <!-- CABLE VIEW -->
-      <div class="cable-canvas hide" id="cableCanvas">
-        <div class="cable-canvas-title">?? Back Panel & Cable Management</div>
-        <div class="cable-zone-grid" id="cableZoneGrid"></div>
-      </div>
+      <!-- Contextual Selected Component Manipulation Bar -->
+      <div class="selected-action-bar" id="selectedActionBar"></div>
+    </div>
 
-      <!-- MONITOR VIEW -->
-      <div class="monitor-wrap hide" id="monitorWrap">
-        <!-- Monitor bezel + screen -->
+    <!-- Monitor / POST View -->
+    <div class="monitor-stage" id="monitorOverlayView">
+      <div class="monitor-wrap">
         <div class="monitor-bezel">
           <div class="monitor-screen">
-            <div class="screen-content" id="screenContent">
-              <div style="background:#000;height:100%;display:flex;align-items:center;justify-content:center;">
-                <div style="text-align:center;color:#222;font-family:'DM Mono',monospace;">
-                  <div style="font-size:32px;margin-bottom:8px;">?</div>
-                  <div style="font-size:11px;">PC is powered off</div>
-                </div>
-              </div>
-            </div>
+            <div class="screen-content" id="screenContent"></div>
           </div>
         </div>
-        <div class="monitor-chin"><div class="monitor-chin-dot"></div></div>
+        <div class="monitor-chin"></div>
         <div class="monitor-stand-col"></div>
         <div class="monitor-stand-base"></div>
-        <!-- Monitor action buttons -->
-        <div style="display:flex;gap:6px;margin-top:14px;justify-content:center;flex-wrap:wrap;max-width:600px;" id="monitorActions"></div>
       </div>
-
     </div>
-  </div>
+  </main>
 
-  <!-- -- RIGHT PANEL -- -->
-  <div class="right-panel">
-    <!-- Always-visible compatibility checker -->
-    <div class="compat-sticky">
-      <div class="compat-sticky-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-        Compatibility Checker
-      </div>
-      <div id="compatResults"><div style="font-size:10px;color:var(--faint);text-align:center;padding:8px;">No components selected yet</div></div>
-    </div>
-
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
     <div class="rpanel-tabs">
-      <button class="rpanel-tab active" onclick="switchRTab('build',this)">Build</button>
-      <button class="rpanel-tab" onclick="switchRTab('tasks',this)">Tasks</button>
-      <button class="rpanel-tab" onclick="switchRTab('trouble',this)">Debug</button>
-      <button class="rpanel-tab" onclick="switchRTab('scenario',this)" id="tabScenario">Scenario</button>
+      <button class="rpanel-tab active" onclick="window.simApp?.switchRTab('build',this)">Assembly</button>
+      <button class="rpanel-tab" onclick="window.simApp?.switchRTab('guide',this)">Procedure</button>
+      <button class="rpanel-tab" id="tabScenario" onclick="window.simApp?.switchRTab('scenario',this)" style="display:none;">Activity</button>
     </div>
 
-    <!-- BUILD INFO -->
     <div class="rpanel-body" id="rtab-build">
       <div class="rp-section">
-        <div class="rp-section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-          Build Progress
-        </div>
+        <div class="rp-section-title">Installed Hardware</div>
         <div id="buildRows"></div>
       </div>
       <div class="rp-section">
-        <div class="rp-section-title">🔌 Cables Status</div>
+        <div class="rp-section-title">Cable Connections</div>
         <div id="cableStatus"></div>
-      </div>
-      <div class="rp-section">
-        <div class="rp-section-title">📋 Install Order Guide</div>
-        <div id="installGuide"></div>
       </div>
     </div>
 
-    <!-- TASKS -->
-    <div class="rpanel-body" id="rtab-tasks" style="display:none;">
+    <div class="rpanel-body" id="rtab-guide" style="display:none;">
       <div class="rp-section">
-        <div class="rp-section-title">Requisite Learning and Tasks</div>
-        <div id="gradePreview"></div>
+        <div class="rp-section-title">Step-by-Step Procedure</div>
+        <div id="installGuide"></div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-section-title">Activity Objectives</div>
         <div id="objectivesList"></div>
       </div>
     </div>
 
-    <!-- TROUBLESHOOT -->
-    <div class="rpanel-body" id="rtab-trouble" style="display:none;">
-      <div class="rp-section">
-        <div class="rp-section-title">Hardware & Software Issues</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">Power on the PC and run diagnostics to detect issues</div>
-        <button class="btn-sm btn-blue" style="width:100%;justify-content:center;margin-bottom:10px;" onclick="runDiagnostics()">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          Run Diagnostics
-        </button>
-        <div id="troubleList"></div>
-      </div>
-    </div>
-
-    <!-- SCENARIO (instructor) -->
     <div class="rpanel-body" id="rtab-scenario" style="display:none;">
       <div class="rp-section">
-        <div class="rp-section-title">Active Scenario</div>
-        <div id="scenarioSummary" style="font-size:11px;color:var(--muted);line-height:1.6;">No scenario set.</div>
+        <div class="rp-section-title">Assigned Activity</div>
+        <div id="scenarioSummary" style="font-size:11px;color:var(--muted);line-height:1.55;"></div>
       </div>
     </div>
-  </div>
+  </aside>
 </div>
 
-<!-- -------------- INSTALLATION STEP MODAL -------------- -->
-<div class="overlay" id="installOverlay">
-  <div class="modal install-modal">
-    <button class="modal-close" onclick="cancelInstall()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div id="installContent"></div>
-  </div>
-</div>
-
-<!-- -------------- CABLE CONNECT MODAL -------------- -->
-<div class="overlay" id="cableOverlay">
-  <div class="modal" style="max-width:420px;">
-    <button class="modal-close" onclick="closeCableModal()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div id="cableModalContent"></div>
-  </div>
-</div>
-
-<!-- -------------- CLEAR CONFIRM MODAL -------------- -->
-<div class="overlay" id="clearConfirmOverlay" onclick="if(event.target===this)closeClearConfirm()">
+<!-- CLEAR CONFIRM MODAL -->
+<div class="overlay" id="clearConfirmOverlay">
   <div class="modal" style="max-width:360px;">
-    <button class="modal-close" onclick="closeClearConfirm()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div class="modal-title">Reset Build?</div>
-    <div class="modal-sub">Are you sure you want to reset?</div>
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn-sm btn-red" style="flex:1;justify-content:center;padding:10px;" onclick="confirmClearBuild()">Yes</button>
-      <button class="btn-sm btn-ghost" style="flex:1;justify-content:center;padding:10px;" onclick="closeClearConfirm()">No</button>
+    <button class="modal-close" onclick="window.simApp?.closeClearConfirm()">×</button>
+    <div class="modal-title">Reset Workstation?</div>
+    <div class="modal-sub">Clear all installed components and cables and start fresh?</div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn-sm btn-red" style="flex:1;padding:10px;" onclick="window.simApp?.confirmClearBuild()">Reset</button>
+      <button class="btn-sm btn-ghost" style="flex:1;padding:10px;color:var(--slate);background:#f1f5f9;" onclick="window.simApp?.closeClearConfirm()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- -------------- SCENARIO MODAL -------------- -->
-<div class="overlay" id="scenarioOverlay" onclick="if(event.target===this)closeScenarioModal()">
-  <div class="modal" style="max-width:500px;">
-    <button class="modal-close" onclick="closeScenarioModal()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div class="modal-title">Set Build Scenario</div>
-    <div class="modal-sub">Configure activity parameters for students</div>
-    <div class="form-group"><label class="form-label">Scenario Name</label><input class="form-input" id="sc-name" placeholder="e.g. Gaming PC Build"/></div>
+<!-- SCENARIO MODAL -->
+<div class="overlay" id="scenarioOverlay">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" onclick="window.simApp?.closeScenarioModal()">×</button>
+    <div class="modal-title">Configure Assembly Activity</div>
+    <div class="modal-sub">Set objectives and constraints for students</div>
+    <div class="form-group"><label class="form-label">Activity Title</label><input class="form-input" id="sc-name" placeholder="e.g. Workstation ATX Assembly"/></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Build Tier</label>
         <select class="form-select" id="sc-tier">
-          <option value="">� Any �</option>
+          <option value="">Any</option>
           <option value="starter">Starter</option>
           <option value="midrange">Mid-Range</option>
           <option value="highend">High-End</option>
@@ -765,48 +480,65 @@ button,input,select,textarea{min-width:0;}
         <select class="form-select" id="sc-type">
           <option value="build">PC Assembly</option>
           <option value="troubleshoot">Troubleshooting</option>
-          <option value="os">OS Installation</option>
         </select>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="sc-desc" placeholder="Describe the activity..."></textarea></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="sc-desc" placeholder="Describe the assembly instructions..."></textarea></div>
     <div class="form-group"><label class="form-label">Objectives</label>
-      <div style="display:flex;gap:6px;margin-bottom:5px;"><input class="form-input" id="sc-obj-input" placeholder="Add objective..." onkeydown="if(event.key==='Enter'){addObj();event.preventDefault();}" /><button class="btn-sm btn-green" onclick="addObj()">Add</button></div>
+      <div style="display:flex;gap:6px;margin-bottom:5px;">
+        <input class="form-input" id="sc-obj-input" placeholder="Add objective..." onkeydown="if(event.key==='Enter'){window.simApp?.addObj();event.preventDefault();}"/>
+        <button class="btn-sm btn-green" onclick="window.simApp?.addObj()">Add</button>
+      </div>
       <div id="sc-obj-list"></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn-sm btn-green" id="sc-publish-btn" style="flex:1;justify-content:center;padding:10px;" onclick="applyScenario()">Publish Scenario</button>
-      <button class="btn-sm btn-ghost" style="padding:10px 16px;" onclick="closeScenarioModal()">Cancel</button>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn-sm btn-green" id="sc-publish-btn" style="flex:1;padding:10px;" onclick="window.simApp?.applyScenario()">Publish Scenario</button>
+      <button class="btn-sm btn-ghost" style="padding:10px 14px;color:var(--slate);background:#f1f5f9;" onclick="window.simApp?.closeScenarioModal()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- -------------- SUBMIT MODAL -------------- -->
-<div class="overlay" id="submitOverlay" onclick="if(event.target===this)closeSubmitModal()">
-  <div class="modal" style="max-width:440px;">
-    <button class="modal-close" onclick="closeSubmitModal()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+<!-- 3D HARDWARE INSPECTOR MODAL -->
+<div class="overlay" id="inspectorOverlay">
+  <div class="modal inspector-modal">
+    <button class="modal-close" onclick="window.simApp?.closeInspector3D()">×</button>
+    <div class="modal-title" id="inspectorTitle">3D Hardware Inspector</div>
+    <div class="modal-sub" id="inspectorMeta">Orbit 360° or flip underside to inspect pins, notches, and keying.</div>
+    <div class="inspector-viewport" id="inspector3dViewport"></div>
+    <div class="inspector-controls">
+      <div class="inspector-btn-row">
+        <button type="button" class="ab-btn ab-primary" onclick="window.simApp?.rotateInspectorModel()">Rotate 90°</button>
+        <button type="button" class="ab-btn ab-accent" onclick="window.simApp?.flipInspectorModel()">Flip Underside</button>
+        <button type="button" class="ab-btn" onclick="window.simApp?.resetInspectorView()">Reset View</button>
+      </div>
+      <span style="font-size:11px;color:#94a3b8;">Drag: Orbit · Scroll: Zoom</span>
+    </div>
+    <div class="inspector-tip" id="inspectorTips"></div>
+  </div>
+</div>
+
+<!-- POST-ASSEMBLY VALIDATION & SUBMIT MODAL -->
+<div class="overlay" id="submitOverlay">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" onclick="window.simApp?.closeSubmitModal()">×</button>
     <div id="submitContent"></div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- TOAST & POPOVER -->
 <div class="toast" id="toast"><div class="toast-icon" id="toastIcon"></div><span id="toastMsg"></span></div>
-
-<!-- COMPONENT DETAILS -->
 <div class="component-popover" id="componentPopover" aria-live="polite"></div>
 
-<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+<script type="module" src="/static/js/sim3d/SimulatorApp.mjs"></script>
 <script>
   const adminComboKeys = new Set();
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', (e) => {
     adminComboKeys.add(e.key.toLowerCase());
     if (e.shiftKey && adminComboKeys.has('a') && adminComboKeys.has('d')) {
       window.location.href = '/admin/login?back=/simulator';
     }
   });
-  document.addEventListener('keyup', e => adminComboKeys.delete(e.key.toLowerCase()));
+  document.addEventListener('keyup', (e) => adminComboKeys.delete(e.key.toLowerCase()));
 </script>
 </body>
 </html>
