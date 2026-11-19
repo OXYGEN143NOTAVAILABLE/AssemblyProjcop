@@ -167,41 +167,578 @@ function makeLabelTexture(title, subtitle = '', accent = '#3ecf5e', bg = '#121a2
 
   const grad = ctx.createLinearGradient(0, 0, width, height);
   grad.addColorStop(0, bg);
-  grad.addColorStop(1, '#090e17');
+  grad.addColorStop(1, '#0a0f18');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = 5;
-  ctx.strokeRect(8, 8, width - 16, height - 16);
+  // Subtle brushed surface lines
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  for (let y = 0; y < height; y += 3) {
+    ctx.fillRect(0, y, width, 1);
+  }
 
-  // Subtle corner technical tick marks
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(18, 18, width - 36, height - 36);
+  // Clean left accent bar instead of cartoon full border
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, 0, Math.max(8, Math.round(width * 0.018)), height);
 
   if (markerCorner) {
-    ctx.fillStyle = '#facc15';
+    ctx.fillStyle = '#eab308';
     ctx.beginPath();
-    ctx.moveTo(22, 22);
-    ctx.lineTo(80, 22);
-    ctx.lineTo(22, 80);
+    ctx.moveTo(16, 16);
+    ctx.lineTo(66, 16);
+    ctx.lineTo(16, 66);
     ctx.closePath();
     ctx.fill();
   }
 
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = `bold ${height >= 256 ? 34 : 26}px sans-serif`;
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = `700 ${height >= 256 ? 36 : 28}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(String(title || '').slice(0, 28), width * 0.5, height * 0.45);
+  ctx.fillText(String(title || '').slice(0, 28), width * 0.5, height * 0.48);
 
   if (subtitle) {
     ctx.fillStyle = '#94a3b8';
-    ctx.font = `bold ${height >= 256 ? 20 : 16}px monospace`;
-    ctx.fillText(String(subtitle || '').slice(0, 40), width * 0.5, height * 0.66);
+    ctx.font = `600 ${height >= 256 ? 20 : 16}px monospace`;
+    ctx.fillText(String(subtitle || '').slice(0, 42), width * 0.5, height * 0.70);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function makeCpuIhsTexture(comp) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Authentic brushed nickel-plated copper IHS surface
+  const grad = ctx.createLinearGradient(0, 0, 512, 512);
+  grad.addColorStop(0, '#dae1ea');
+  grad.addColorStop(0.5, '#c6cfd9');
+  grad.addColorStop(1, '#b6c0ce');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Fine horizontal CNC micro-brushing
+  for (let y = 0; y < 512; y += 2) {
+    const alpha = 0.028 + ((y * 19) % 11) * 0.0035;
+    ctx.fillStyle = y % 4 === 0 ? `rgba(255,255,255,${alpha})` : `rgba(15,23,42,${alpha})`;
+    ctx.fillRect(0, y, 512, 1);
+  }
+
+  // Subtle chamfer highlight inset
+  ctx.strokeStyle = 'rgba(255,255,255,0.36)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(10, 10, 492, 492);
+  ctx.strokeStyle = 'rgba(15,23,42,0.28)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(16, 16, 480, 480);
+
+  const rawBrand = String(comp?.brand || '').toUpperCase();
+  const rawModel = String(comp?.model || comp?.name || 'PROCESSOR').toUpperCase();
+  const isAmd = rawBrand.includes('AMD') || rawModel.includes('RYZEN');
+  const isIntel = rawBrand.includes('INTEL') || rawModel.includes('CORE') || rawModel.includes('I5') || rawModel.includes('I7') || rawModel.includes('I9');
+
+  // High-contrast laser-etched dark charcoal typography
+  ctx.fillStyle = '#0f172a';
+  ctx.textAlign = 'center';
+  ctx.font = '800 40px sans-serif';
+  ctx.fillText(isAmd ? 'AMD RYZEN' : isIntel ? 'INTEL CORE' : (rawBrand || 'PROCESSOR'), 256, 146);
+
+  // Crisp etched divider hairline
+  ctx.fillStyle = 'rgba(15,23,42,0.62)';
+  ctx.fillRect(96, 168, 320, 3);
+
+  // Model SKU
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '800 34px monospace';
+  const cleanModel = rawModel.replace(/^AMD\s+RYZEN\s*/i, '').replace(/^INTEL\s+CORE\s*/i, '').slice(0, 18);
+  ctx.fillText(cleanModel || String(comp?.socket || 'CPU'), 256, 224);
+
+  // Authentic fab / batch laser-etch strings
+  ctx.fillStyle = '#1e293b';
+  ctx.font = '700 20px monospace';
+  ctx.fillText(`${String(comp?.socket || 'LGA').toUpperCase()} · ${comp?.cores || 8}C/${(comp?.cores || 8) * 2}T`, 256, 276);
+  ctx.fillStyle = '#334155';
+  ctx.font = '600 15px monospace';
+  ctx.fillText(isAmd ? 'DIFFUSED IN TAIWAN · MADE IN MALAYSIA' : 'SRM88 · 3.40GHZ · V418B920', 256, 326);
+  ctx.fillText(isAmd ? '© 2024 AMD · 100-000000593' : '© INTEL CORP · MALAY', 256, 352);
+
+  // Micro 2D DataMatrix etched code (bottom-right)
+  ctx.fillStyle = '#0f172a';
+  const dmX = 374;
+  const dmY = 382;
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (r === 8 || c === 0 || ((r * 7 + c * 13) % 3 === 0)) {
+        ctx.fillRect(dmX + c * 8, dmY + r * 8, 7, 7);
+      }
+    }
+  }
+
+  // Subtle laser-etched Pin-1 corner arrow (top-left matches -X/+Y)
+  ctx.fillStyle = '#ca8a04';
+  ctx.beginPath();
+  ctx.moveTo(28, 28);
+  ctx.lineTo(74, 28);
+  ctx.lineTo(28, 74);
+  ctx.closePath();
+  ctx.fill();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makeGpuNameplateTexture(comp) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+
+  const tag = `${comp?.brand || ''} ${comp?.model || ''} ${comp?.name || ''}`.toUpperCase();
+  const isAmd = tag.includes('RADEON') || tag.includes('RX ') || tag.includes('AMD');
+  const isIntel = tag.includes('ARC') || tag.includes('INTEL');
+  const accent = isAmd ? '#ef4444' : isIntel ? '#38bdf8' : '#76b900';
+  const family = isAmd ? 'RADEON RX' : isIntel ? 'INTEL ARC' : 'GEFORCE RTX';
+
+  // Brushed obsidian titanium plate
+  const grad = ctx.createLinearGradient(0, 0, 1024, 200);
+  grad.addColorStop(0, '#181f2a');
+  grad.addColorStop(0.5, '#11161f');
+  grad.addColorStop(1, '#0c1017');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1024, 200);
+
+  // Fine machined horizontal lines
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let y = 0; y < 200; y += 4) ctx.fillRect(0, y, 1024, 1);
+
+  // Angled racing accent slash on left
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(44, 0);
+  ctx.lineTo(22, 200);
+  ctx.lineTo(0, 200);
+  ctx.closePath();
+  ctx.fill();
+
+  // Subtle recessed metallic edge bevel
+  ctx.strokeStyle = 'rgba(148,163,184,0.22)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(4, 4, 1016, 192);
+
+  // Bold wide-tracked silkscreen family title
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = '800 58px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(family, 76, 104);
+
+  // Model & VRAM right-aligned technical tag
+  const shortModel = String(comp?.model || comp?.name || '')
+    .replace(/nvidia|geforce|amd|radeon/gi, '')
+    .trim()
+    .slice(0, 20)
+    .toUpperCase();
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = '700 30px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(shortModel || `${comp?.vram_gb || 8}GB`, 978, 92);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 22px monospace';
+  ctx.fillText(`${comp?.vram_gb || 8}GB GDDR6 · ${comp?.tdp_watts || 170}W TDP`, 978, 148);
+
+  // Sleek thin bottom brand accent rule
+  ctx.fillStyle = accent;
+  ctx.fillRect(76, 134, 280, 6);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makeGpuBackplateDecalTexture(comp) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 384;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, 1024, 384);
+
+  const tag = `${comp?.brand || ''} ${comp?.model || ''} ${comp?.name || ''}`.toUpperCase();
+  const isAmd = tag.includes('RADEON') || tag.includes('RX ') || tag.includes('AMD');
+  const family = isAmd ? 'RADEON RX' : 'GEFORCE RTX';
+
+  // Subtle geometric anodized CNC diagonal accents (low contrast, authentic hardware look)
+  ctx.strokeStyle = 'rgba(148,163,184,0.18)';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(48, 320);
+  ctx.lineTo(240, 320);
+  ctx.lineTo(310, 250);
+  ctx.lineTo(540, 250);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(48, 64);
+  ctx.lineTo(420, 64);
+  ctx.lineTo(468, 112);
+  ctx.stroke();
+
+  // Matte silver laser-etched branding along upper-left strip
+  ctx.fillStyle = 'rgba(226,232,240,0.68)';
+  ctx.font = '700 40px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(family, 58, 122);
+
+  ctx.fillStyle = 'rgba(148,163,184,0.52)';
+  ctx.font = '600 22px monospace';
+  ctx.fillText(String(comp?.model || comp?.name || 'GRAPHICS').toUpperCase().slice(0, 26), 58, 162);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makePsuLabelTexture(comp) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 384;
+  const ctx = canvas.getContext('2d');
+
+  // Matte industrial black label
+  ctx.fillStyle = '#11161f';
+  ctx.fillRect(0, 0, 768, 384);
+
+  // Subtle dark diagonal band
+  ctx.fillStyle = '#192130';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(420, 0);
+  ctx.lineTo(340, 384);
+  ctx.lineTo(0, 384);
+  ctx.closePath();
+  ctx.fill();
+
+  const eff = String(comp?.efficiency_rating || comp?.efficiency || '80+ Bronze').toUpperCase();
+  const isGold = eff.includes('GOLD') || eff.includes('PLATINUM') || eff.includes('TITANIUM');
+  const badgeColor = eff.includes('PLATINUM') ? '#cbd5e1' : isGold ? '#eab308' : '#d97706';
+
+  // Left sleek amber/gold accent bar
+  ctx.fillStyle = badgeColor;
+  ctx.fillRect(0, 0, 14, 384);
+
+  // Brand & Series
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '700 24px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(String(comp?.brand || 'CORSAIR').toUpperCase(), 40, 62);
+
+  // Hero Wattage Callout
+  const watts = comp?.wattage || 650;
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '800 94px sans-serif';
+  ctx.fillText(`${watts}W`, 36, 168);
+
+  // Sub-model & Modular Spec
+  ctx.fillStyle = badgeColor;
+  ctx.font = '700 20px monospace';
+  ctx.fillText(`${String(comp?.model || 'SERIES').toUpperCase().slice(0, 18)} · FULLY MODULAR`, 40, 212);
+
+  // 80 PLUS Metallic Medallion on right
+  ctx.fillStyle = '#0b0f16';
+  ctx.strokeStyle = badgeColor;
+  ctx.lineWidth = 4;
+  ctx.fillRect(592, 34, 134, 152);
+  ctx.strokeRect(592, 34, 134, 152);
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '800 50px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('80', 659, 98);
+  ctx.fillStyle = badgeColor;
+  ctx.font = '700 20px sans-serif';
+  ctx.fillText('PLUS', 659, 128);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '700 18px monospace';
+  ctx.fillText(isGold ? (eff.includes('PLATINUM') ? 'PLATINUM' : 'GOLD') : 'BRONZE', 659, 166);
+
+  // Authentic DC Output Rail Specification Table (bottom)
+  const tx = 40;
+  const ty = 248;
+  const tw = 688;
+  const th = 104;
+  ctx.strokeStyle = 'rgba(148,163,184,0.34)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(tx, ty, tw, th);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillRect(tx, ty, tw, 32);
+
+  const cols = ['DC OUTPUT', '+3.3V', '+5V', '+12V', '-12V', '+5VSB'];
+  const amps12 = Math.round((watts * 0.96) / 12);
+  const vals = ['MAX LOAD', '20A', '20A', `${amps12}A`, '0.3A', '3.0A'];
+  const colW = tw / cols.length;
+  ctx.textAlign = 'center';
+  for (let i = 0; i < cols.length; i++) {
+    const cx = tx + i * colW + colW * 0.5;
+    if (i > 0) {
+      ctx.beginPath();
+      ctx.moveTo(tx + i * colW, ty);
+      ctx.lineTo(tx + i * colW, ty + th);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 15px monospace';
+    ctx.fillText(cols[i], cx, ty + 22);
+    ctx.fillStyle = i === 3 ? badgeColor : '#94a3b8';
+    ctx.font = '700 17px monospace';
+    ctx.fillText(vals[i], cx, ty + 68);
+  }
+  ctx.fillStyle = '#64748b';
+  ctx.font = '600 13px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`AC INPUT: 100-240V ~ 50/60Hz · ACTIVE PFC · TOTAL POWER ${watts}W`, tx + 10, ty + 96);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makeSsdLabelTexture(comp, kind) {
+  const isNvme = kind === 'm2_nvme';
+  const isHdd = kind === 'sata_35';
+  const W = isNvme ? 768 : 512;
+  const H = isNvme ? 256 : 704;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const brand = String(comp?.brand || 'SSD').toUpperCase();
+  const cap = `${comp?.capacity_gb || (isHdd ? 2000 : 1000)}GB`;
+
+  if (isNvme) {
+    // Copper-graphene sleek thermal film label
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, '#121720');
+    g.addColorStop(0.75, '#192130');
+    g.addColorStop(1, '#261e18');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(0, 0, W, 12);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(28, 36, 10, 184);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '800 54px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(brand.slice(0, 14), 58, 104);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 32px monospace';
+    ctx.fillText(`${String(comp?.model || 'NVMe M.2').slice(0, 18).toUpperCase()}`, 58, 158);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 22px monospace';
+    ctx.fillText(`PCIe Gen4 x4 · ${cap} · 3D V-NAND`, 58, 206);
+
+    // Mini barcode on right
+    ctx.fillStyle = '#cbd5e1';
+    for (let x = 590; x < 732; x += 6) {
+      if ((x * 7) % 11 > 3) ctx.fillRect(x, 168, (x % 4 === 0 ? 4 : 2), 54);
+    }
+  } else if (isHdd) {
+    // Classic industrial silver/white HDD specification sticker
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, W, 128);
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(0, 128, W, 14);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '800 44px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(brand.slice(0, 14), 32, 68);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '700 24px monospace';
+    ctx.fillText('3.5" INTERNAL HARD DRIVE', 32, 106);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '800 96px sans-serif';
+    ctx.fillText(cap, 32, 260);
+    ctx.fillStyle = '#334155';
+    ctx.font = '700 26px monospace';
+    ctx.fillText('7200 RPM · SATA 6Gb/s · 256MB CACHE', 32, 316);
+    ctx.fillText(`MDL: ${String(comp?.model || 'ST2000DM008').toUpperCase().slice(0, 18)}`, 32, 366);
+    ctx.fillText('S/N: ZFL49K2P · FW: 0001', 32, 404);
+
+    // Barcode block
+    ctx.fillStyle = '#0f172a';
+    for (let x = 36; x < 468; x += 7) {
+      if ((x * 13) % 17 > 4) ctx.fillRect(x, 466, (x % 3 === 0 ? 4 : 2), 94);
+    }
+    ctx.fillStyle = '#475569';
+    ctx.font = '600 18px monospace';
+    ctx.fillText('DO NOT COVER BREATHER HOLE · CE · FC · RoHS', 32, 636);
+  } else {
+    // 2.5" SATA SSD: Sleek anodized charcoal graphic (Samsung EVO / Crucial industrial aesthetic)
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#18202c');
+    g.addColorStop(1, '#0e131b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle brushed grain
+    ctx.fillStyle = 'rgba(255,255,255,0.025)';
+    for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+
+    const accent = brand.includes('SAMSUNG') ? '#ea580c' : brand.includes('CRUCIAL') ? '#2563eb' : '#10b981';
+
+    // Iconic clean geometric emblem (bottom-center square accent)
+    ctx.fillStyle = accent;
+    ctx.fillRect(54, 48, 84, 14);
+    ctx.fillRect(216, 468, 80, 80);
+
+    // Brand & Model
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '800 54px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(brand.slice(0, 14), W * 0.5, 198);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 32px monospace';
+    ctx.fillText('SOLID STATE DRIVE', W * 0.5, 252);
+
+    ctx.fillStyle = accent;
+    ctx.font = '800 68px sans-serif';
+    ctx.fillText(cap, W * 0.5, 358);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 22px monospace';
+    ctx.fillText(`${String(comp?.model || 'EVO SATA').toUpperCase().slice(0, 20)}`, W * 0.5, 412);
+
+    // Technical footer
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 18px monospace';
+    ctx.fillText('2.5" SATA 6Gb/s · 3D V-NAND · CE FC', W * 0.5, 642);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makeRamSpreaderTexture(comp, isDdr5) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = isDdr5 ? '#1a2232' : '#1f232a';
+  ctx.fillRect(0, 0, 512, 128);
+
+  // Machined subtle chevron grooves
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 3;
+  for (let x = 20; x < 492; x += 28) {
+    ctx.beginPath();
+    ctx.moveTo(x, 12);
+    ctx.lineTo(x + 18, 116);
+    ctx.stroke();
+  }
+
+  const accent = isDdr5 ? '#38bdf8' : '#dc2626';
+  ctx.fillStyle = accent;
+  ctx.fillRect(26, 28, 8, 72);
+
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '800 34px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(String(comp?.brand || (isDdr5 ? 'VENGEANCE' : 'RIPJAWS')).toUpperCase().slice(0, 14), 52, 66);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '700 21px monospace';
+  const mhz = comp?.speed_mhz || (isDdr5 ? 5600 : 3200);
+  ctx.fillText(`${isDdr5 ? 'DDR5' : 'DDR4'}-${mhz} · HIGH-PERFORMANCE`, 52, 98);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function makeFanHubTexture() {
+  const c = getCachedCanvas('fan_hub_256', 256, 256, (ctx, w, h) => {
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+    const rad = ctx.createRadialGradient(cx, cy, 8, cx, cy, w * 0.5);
+    rad.addColorStop(0, '#475569');
+    rad.addColorStop(0.45, '#1e293b');
+    rad.addColorStop(0.85, '#334155');
+    rad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Concentric spun-metal lathe rings
+    for (let r = 14; r < w * 0.48; r += 6) {
+      ctx.strokeStyle = r % 12 === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Minimalist machined turbine ring mark
+    ctx.strokeStyle = 'rgba(226,232,240,0.55)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 38, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeFanAirflowLabelTexture() {
+  const c = getCachedCanvas('fan_airflow_256', 256, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#141b26';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(3, 3, w - 6, h - 6);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 20px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('AIRFLOW', 20, 40);
+
+    // Crisp directional arrow pointing right (mapped to -Z exhaust)
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(136, 27, 64, 10);
+    ctx.beginPath();
+    ctx.moveTo(200, 14);
+    ctx.lineTo(234, 32);
+    ctx.lineTo(200, 50);
+    ctx.closePath();
+    ctx.fill();
+  });
+  const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -450,32 +987,43 @@ function makeCpuBottomTexture(comp) {
 // ---------------------------------------------------------------------------
 
 function _makeSweptRotorGeometry(size, bladeCount = 9) {
-  const rInner = size * 0.165;
-  const rOuter = size * 0.415;
+  const rInner = size * 0.155;
+  const rOuter = size * 0.422;
   const bladeParts = [];
 
-  // Swept airfoil blade polygon
+  // Smoothly tapered scimitar-swept static-pressure airfoil blade
   const bladeLen = rOuter - rInner;
-  const chord = size * 0.11;
+  const chord = size * 0.135;
   const shape = new THREE.Shape();
-  shape.moveTo(0, -chord * 0.42);
-  shape.quadraticCurveTo(bladeLen * 0.52, -chord * 0.65, bladeLen, -chord * 0.25);
-  shape.lineTo(bladeLen, chord * 0.35);
-  shape.quadraticCurveTo(bladeLen * 0.48, chord * 0.12, 0, chord * 0.38);
+  shape.moveTo(0, -chord * 0.36);
+  shape.bezierCurveTo(
+    bladeLen * 0.35, -chord * 0.68,
+    bladeLen * 0.78, -chord * 0.58,
+    bladeLen, -chord * 0.12
+  );
+  shape.quadraticCurveTo(bladeLen * 1.02, chord * 0.16, bladeLen * 0.94, chord * 0.34);
+  shape.bezierCurveTo(
+    bladeLen * 0.66, chord * 0.22,
+    bladeLen * 0.32, chord * 0.08,
+    0, chord * 0.34
+  );
   shape.closePath();
 
   const baseBlade = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.014,
-    bevelEnabled: false,
-    curveSegments: 3,
+    depth: 0.011,
+    bevelEnabled: true,
+    bevelThickness: 0.002,
+    bevelSize: 0.002,
+    bevelSegments: 1,
+    curveSegments: 5,
   });
-  baseBlade.translate(0, 0, -0.007);
-  baseBlade.rotateX(0.46); // Aerodynamic pitch
+  baseBlade.translate(0, 0, -0.0055);
+  baseBlade.rotateX(0.42); // Aerodynamic blade pitch
 
   for (let i = 0; i < bladeCount; i++) {
     const angle = (i / bladeCount) * Math.PI * 2;
     const g = baseBlade.clone();
-    g.translate(rInner * 0.9, 0, 0);
+    g.translate(rInner * 0.88, 0, 0);
     g.rotateZ(angle);
     bladeParts.push(g);
   }
@@ -484,12 +1032,12 @@ function _makeSweptRotorGeometry(size, bladeCount = 9) {
 }
 
 function _makeFanAssembly(size, frameMat, fanRotorsList, opts = {}) {
-  const { depth = 0.24, accentColor = null, showStruts = true } = opts;
+  const { depth = 0.24, accentColor = null, showStruts = true, bladeCount = 9 } = opts;
   const fanGroup = new THREE.Group();
 
-  // 1. Octagonal/Chamfered Housing Frame with Circular Bore Hole
+  // 1. Chamfered Octagonal Housing Frame with Smooth Circular Bore
   const half = size * 0.5;
-  const cut = size * 0.09;
+  const cut = size * 0.095;
   const frameShape = new THREE.Shape();
   frameShape.moveTo(-half + cut, -half);
   frameShape.lineTo(half - cut, -half);
@@ -502,86 +1050,94 @@ function _makeFanAssembly(size, frameMat, fanRotorsList, opts = {}) {
   frameShape.closePath();
 
   const bore = new THREE.Path();
-  bore.absarc(0, 0, size * 0.435, 0, Math.PI * 2, true);
+  bore.absarc(0, 0, size * 0.438, 0, Math.PI * 2, true);
   frameShape.holes.push(bore);
 
   const frameGeo = new THREE.ExtrudeGeometry(frameShape, {
-    depth: Math.max(0.06, depth - 0.02),
+    depth: Math.max(0.055, depth - 0.018),
     bevelEnabled: true,
     bevelThickness: 0.008,
     bevelSize: 0.008,
     bevelSegments: 1,
-    curveSegments: 14,
+    curveSegments: 18,
   });
   frameGeo.center();
   const frameMesh = new THREE.Mesh(frameGeo, frameMat);
   frameMesh.castShadow = true;
   fanGroup.add(frameMesh);
 
-  // 2. Corner Anti-Vibration Rubber Pads + Screw Holes
-  const padMat = new THREE.MeshStandardMaterial({ color: 0x090d14, roughness: 0.9, metalness: 0.05 });
+  // 2. Corner Anti-Vibration Rubber Pads + Recessed Metallic Screw Bushings
+  const padMat = new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.92, metalness: 0.04 });
+  const bushingMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.32, metalness: 0.82 });
   const padGeos = [];
+  const holeGeos = [];
   const off = half - cut * 0.95;
   for (const [cx, cy] of [[-off, -off], [off, -off], [-off, off], [off, off]]) {
-    const p = new THREE.CylinderGeometry(size * 0.052, size * 0.052, depth + 0.008, 12);
+    const p = new THREE.CylinderGeometry(size * 0.056, size * 0.056, depth + 0.006, 12);
     p.rotateX(Math.PI / 2);
     p.translate(cx, cy, 0);
     padGeos.push(p);
+
+    const b = new THREE.CylinderGeometry(size * 0.028, size * 0.028, depth + 0.012, 10);
+    b.rotateX(Math.PI / 2);
+    b.translate(cx, cy, 0);
+    holeGeos.push(b);
   }
   fanGroup.add(new THREE.Mesh(safeMerge(padGeos), padMat));
+  fanGroup.add(new THREE.Mesh(safeMerge(holeGeos), bushingMat));
 
-  // 3. 4 Curved Rear Stator Struts on exhaust face (-Z)
+  // 3. 4 Swept Rear Stator Struts on Exhaust Face (-Z)
   if (showStruts) {
     const strutGeos = [];
     for (let s = 0; s < 4; s++) {
       const a = (s / 4) * Math.PI * 2 + Math.PI / 4;
-      const sg = new THREE.BoxGeometry(size * 0.29, size * 0.026, 0.02);
-      sg.translate(size * 0.285, 0, -depth * 0.36);
+      const sg = new THREE.BoxGeometry(size * 0.285, size * 0.024, 0.018);
+      sg.rotateZ(0.16);
+      sg.translate(size * 0.285, 0, -depth * 0.38);
       sg.rotateZ(a);
       strutGeos.push(sg);
     }
-    const backDisc = new THREE.CylinderGeometry(size * 0.165, size * 0.165, 0.024, 18);
+    const backDisc = new THREE.CylinderGeometry(size * 0.162, size * 0.162, 0.024, 20);
     backDisc.rotateX(Math.PI / 2);
-    backDisc.translate(0, 0, -depth * 0.36);
+    backDisc.translate(0, 0, -depth * 0.38);
     strutGeos.push(backDisc);
     fanGroup.add(new THREE.Mesh(safeMerge(strutGeos), frameMat));
   }
 
-  // Optional Subtle Rim Accent Ring
+  // Optional Subtle Recessed Rim Accent Ring
   if (accentColor) {
     const ringMat = new THREE.MeshStandardMaterial({
       color: accentColor,
       emissive: accentColor,
-      emissiveIntensity: 0.32,
+      emissiveIntensity: 0.22,
       roughness: 0.35,
+      metalness: 0.3,
     });
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(size * 0.435, 0.011, 8, 28), ringMat);
-    ring.position.z = depth * 0.46;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(size * 0.436, 0.0085, 8, 32), ringMat);
+    ring.position.z = depth * 0.45;
     fanGroup.add(ring);
   }
 
-  // 4. Spinning Rotor (Hub + Metallic Brushed Cap + 9 Merged Swept Blades)
+  // 4. Spinning Rotor (Hub + Spun-Metal Concentric Hub Cap + 9 Merged Scimitar Blades)
   const rotor = new THREE.Group();
-  const hubMat = new THREE.MeshStandardMaterial({ color: 0x263143, roughness: 0.32, metalness: 0.65 });
-  const bladeMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.38, metalness: 0.42 });
+  const hubMat = new THREE.MeshStandardMaterial({ color: 0x1e2633, roughness: 0.36, metalness: 0.55 });
+  const bladeMat = new THREE.MeshStandardMaterial({ color: 0x364152, roughness: 0.36, metalness: 0.38 });
   const capMat = new THREE.MeshStandardMaterial({
-    color: 0xcbd5e1,
-    roughness: 0.24,
+    color: 0xffffff,
+    map: makeFanHubTexture(),
+    roughness: 0.22,
     metalness: 0.88,
-    bumpMap: makeBrushedMetalBumpTexture(),
-    bumpScale: 0.004,
   });
 
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.165, size * 0.175, depth * 0.58, 20), hubMat);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.162, size * 0.172, depth * 0.56, 22), hubMat);
   hub.rotation.x = Math.PI / 2;
   rotor.add(hub);
 
-  const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.105, size * 0.105, 0.018, 20), capMat);
-  hubCap.rotation.x = Math.PI / 2;
-  hubCap.position.z = depth * 0.30;
+  const hubCap = new THREE.Mesh(new THREE.CircleGeometry(size * 0.125, 22), capMat);
+  hubCap.position.z = depth * 0.286;
   rotor.add(hubCap);
 
-  const bladesMesh = new THREE.Mesh(_makeSweptRotorGeometry(size, 9), bladeMat);
+  const bladesMesh = new THREE.Mesh(_makeSweptRotorGeometry(size, bladeCount), bladeMat);
   bladesMesh.castShadow = true;
   rotor.add(bladesMesh);
 
@@ -710,18 +1266,24 @@ function makeCaseStandOffsAndFrame(caseGroup, dimsMm) {
   mbTray.receiveShadow = true;
   caseGroup.add(mbTray);
 
-  // Slotted Rubber Cable Grommets beside MB ATX/SATA Edge
+  // Slotted Rubber Cable Grommets beside MB ATX/SATA Edge + Top-Left EPS Cutout
   for (const gy of [1.55, 2.38, 3.22, 3.92]) {
+    if (gy > h - 0.45) continue;
     const grommet = new THREE.Mesh(makeExtrudedBox(0.18, 0.34, 0.055, 0.04, 0.006), rubberMat);
     grommet.position.set(0.45, gy, -0.75);
     caseGroup.add(grommet);
   }
+  const epsGrommet = new THREE.Mesh(makeExtrudedBox(0.32, 0.14, 0.055, 0.03, 0.005), rubberMat);
+  epsGrommet.position.set(-1.62, Math.min(4.44, h - 0.16), -0.75);
+  caseGroup.add(epsGrommet);
 
   // 9 Hex Brass Standoffs aligned to pc-anatomy ATX mounts (tips stop flush at -0.680 under MB back face)
   const standoffGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.064, 6);
   standoffGeo.rotateX(Math.PI / 2);
   for (const sx of [-2.13, -0.57, 0.14]) {
+    if (sx < -d / 2 + 0.12) continue;
     for (const sy of [1.45, 2.76, 4.31]) {
+      if (sy > h - 0.18) continue;
       const standoff = new THREE.Mesh(standoffGeo, brassMat);
       standoff.position.set(sx, sy, -0.712);
       caseGroup.add(standoff);
@@ -746,27 +1308,30 @@ function makeCaseStandOffsAndFrame(caseGroup, dimsMm) {
   psuHole.closePath();
   rearWallShape.holes.push(psuHole);
 
-  // PCIe expansion cutout (mid-lower, cleared up to y=2.76 so GPU bracket never clips)
+  // PCIe expansion cutout (mid-lower, aligned to GPU downward-hanging slots y=1.28..2.68)
   const pcieHole = new THREE.Path();
   pcieHole.moveTo(-0.68, 1.28);
   pcieHole.lineTo(0.66, 1.28);
-  pcieHole.lineTo(0.66, 2.76);
-  pcieHole.lineTo(-0.68, 2.76);
+  pcieHole.lineTo(0.66, Math.min(2.74, h - 1.35));
+  pcieHole.lineTo(-0.68, Math.min(2.74, h - 1.35));
   pcieHole.closePath();
   rearWallShape.holes.push(pcieHole);
 
   // Motherboard Rear I/O shield cutout matching pc-anatomy I/O stack (z: -0.70..-0.31, y: 2.84..4.39)
+  const ioTopY = Math.min(4.39, h - 0.16);
+  const ioBotY = Math.min(2.84, ioTopY - 1.25);
   const ioHole = new THREE.Path();
-  ioHole.moveTo(0.31, 2.84);
-  ioHole.lineTo(0.70, 2.84);
-  ioHole.lineTo(0.70, 4.39);
-  ioHole.lineTo(0.31, 4.39);
+  ioHole.moveTo(0.31, ioBotY);
+  ioHole.lineTo(0.70, ioBotY);
+  ioHole.lineTo(0.70, ioTopY);
+  ioHole.lineTo(0.31, ioTopY);
   ioHole.closePath();
   rearWallShape.holes.push(ioHole);
 
-  // Rear 120mm exhaust fan circular mesh opening (maps to z = +0.24, y = 3.62)
+  // Rear 120mm exhaust fan circular mesh opening (maps to z = +0.30, y = 3.62)
+  const fanCenterY = Math.min(3.62, h - 0.68);
   const rearFanHole = new THREE.Path();
-  rearFanHole.absarc(-0.24, 3.62, 0.54, 0, Math.PI * 2, true);
+  rearFanHole.absarc(-0.30, fanCenterY, 0.54, 0, Math.PI * 2, true);
   rearWallShape.holes.push(rearFanHole);
 
   const rearWallGeo = new THREE.ExtrudeGeometry(rearWallShape, {
@@ -846,16 +1411,46 @@ function makeCaseStandOffsAndFrame(caseGroup, dimsMm) {
     caseGroup.add(fFan);
   }
 
-  // 8. Sculpted PSU Shroud with Top Perforated Vent & Side Viewing Cutout Window
+  // 8. Sculpted PSU Shroud with Top Perforated Vent, PCIe Cable Grommet Slot & Side Viewing Window
   const shroudLen = d * 0.62;
-  const shroudTop = new THREE.Mesh(makeExtrudedBox(shroudLen, 0.05, w - 0.14, 0.02, 0.005), steelMat);
-  shroudTop.position.set(-d / 2 + shroudLen / 2 + 0.06, 1.12, 0.02);
+  const shroudCenterX = -d / 2 + shroudLen / 2 + 0.06;
+  const shroudTopShape = makeRoundedRectShape(shroudLen, w - 0.14, 0.02);
+  // Real GPU PCIe power pass-through slot cutout along +Z front half of shroud deck
+  const pcieSlotCut = new THREE.Path();
+  pcieSlotCut.moveTo(-0.18, 0.44);
+  pcieSlotCut.lineTo(shroudLen * 0.42, 0.44);
+  pcieSlotCut.lineTo(shroudLen * 0.42, 0.68);
+  pcieSlotCut.lineTo(-0.18, 0.68);
+  pcieSlotCut.closePath();
+  shroudTopShape.holes.push(pcieSlotCut);
+
+  const shroudTopGeo = new THREE.ExtrudeGeometry(shroudTopShape, {
+    depth: 0.04,
+    bevelEnabled: true,
+    bevelThickness: 0.005,
+    bevelSize: 0.005,
+    bevelSegments: 1,
+  });
+  shroudTopGeo.center();
+  shroudTopGeo.rotateX(Math.PI / 2);
+  const shroudTop = new THREE.Mesh(shroudTopGeo, steelMat);
+  shroudTop.position.set(shroudCenterX, 1.12, 0.02);
   shroudTop.receiveShadow = true;
   caseGroup.add(shroudTop);
 
-  // Perforated top vent panel on PSU shroud
-  const shroudVent = new THREE.Mesh(new THREE.BoxGeometry(shroudLen * 0.52, 0.015, w * 0.56), meshMat);
-  shroudVent.position.set(-d / 2 + shroudLen * 0.58, 1.148, -0.04);
+  // Rubber bezel rim around the PSU shroud PCIe cable pass-through slot
+  const pcieGrommetRim = new THREE.Mesh(
+    new THREE.BoxGeometry(shroudLen * 0.42 + 0.24, 0.022, 0.03),
+    rubberMat
+  );
+  pcieGrommetRim.position.set(shroudCenterX + shroudLen * 0.21 - 0.09, 1.135, 0.45);
+  const pcieGrommetRimF = pcieGrommetRim.clone();
+  pcieGrommetRimF.position.z = 0.71;
+  caseGroup.add(pcieGrommetRim, pcieGrommetRimF);
+
+  // Perforated top vent panel on PSU shroud (kept strictly behind PCIe slot cutout)
+  const shroudVent = new THREE.Mesh(new THREE.BoxGeometry(shroudLen * 0.52, 0.015, w * 0.42), meshMat);
+  shroudVent.position.set(-d / 2 + shroudLen * 0.54, 1.146, -0.18);
   caseGroup.add(shroudVent);
 
   // Subtle illuminated accent bar along PSU shroud outer lip (signature pc-anatomy look!)
@@ -863,7 +1458,7 @@ function makeCaseStandOffsAndFrame(caseGroup, dimsMm) {
     new THREE.BoxGeometry(shroudLen * 0.94, 0.018, 0.018),
     new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 0.35, roughness: 0.25 })
   );
-  shroudAccent.position.set(-d / 2 + shroudLen / 2 + 0.06, 1.12, w / 2 - 0.055);
+  shroudAccent.position.set(shroudCenterX, 1.12, w / 2 - 0.055);
   caseGroup.add(shroudAccent);
 
   // Side shroud wall with open PSU badge viewing window
@@ -891,16 +1486,38 @@ function makeCaseStandOffsAndFrame(caseGroup, dimsMm) {
   });
   shroudSideGeo.center();
   const shroudSide = new THREE.Mesh(shroudSideGeo, steelMat);
-  shroudSide.position.set(-d / 2 + shroudLen / 2 + 0.06, 0.61, w / 2 - 0.14);
+  shroudSide.position.set(shroudCenterX, 0.61, w / 2 - 0.14);
   caseGroup.add(shroudSide);
 
-  const shroudFront = new THREE.Mesh(new THREE.BoxGeometry(0.045, 1.02, w - 0.14), steelMat);
+  // Shroud front bulkhead with real lower tunnel pass-through cutout for SATA power cables
+  const shroudFrontShape = new THREE.Shape();
+  const sfW = w - 0.14;
+  shroudFrontShape.moveTo(-sfW / 2, -0.51);
+  shroudFrontShape.lineTo(sfW / 2, -0.51);
+  shroudFrontShape.lineTo(sfW / 2, 0.51);
+  shroudFrontShape.lineTo(-sfW / 2, 0.51);
+  shroudFrontShape.closePath();
+  const tunnelCut = new THREE.Path();
+  // rotateY(PI/2) maps shape X -> -Z, so X in [0.16..0.82] cuts Z in [-0.82..-0.16]
+  tunnelCut.moveTo(0.16, -0.49);
+  tunnelCut.lineTo(0.84, -0.49);
+  tunnelCut.lineTo(0.84, -0.04);
+  tunnelCut.lineTo(0.16, -0.04);
+  tunnelCut.closePath();
+  shroudFrontShape.holes.push(tunnelCut);
+  const shroudFrontGeo = new THREE.ExtrudeGeometry(shroudFrontShape, {
+    depth: 0.04,
+    bevelEnabled: false,
+  });
+  shroudFrontGeo.center();
+  shroudFrontGeo.rotateY(Math.PI / 2);
+  const shroudFront = new THREE.Mesh(shroudFrontGeo, steelMat);
   shroudFront.position.set(-d / 2 + shroudLen + 0.06, 0.61, 0.02);
   caseGroup.add(shroudFront);
 
-  // Drive cage shelf on right side of shroud
+  // Drive cage shelf on right side of shroud (adapts cleanly to compact/full cases)
   const driveShelf = new THREE.Mesh(makeExtrudedBox(1.18, 0.045, 1.28, 0.02, 0.005), steelMat);
-  driveShelf.position.set(1.42, 0.36, 0.05);
+  driveShelf.position.set(Math.min(1.42, d / 2 - 0.88), 0.36, 0.05);
   caseGroup.add(driveShelf);
 
   // 9. Removable Tempered Glass Side Panel (+Z face) with Dark Frit Border & Knurled Thumbscrews
@@ -1833,96 +2450,155 @@ export function createCpuModel(comp) {
   const dims = comp?.dimensionsMm || { w: 40, h: 42, d: 6 };
   const w = Math.max(0.38, dims.w * S);
   const h = Math.max(0.40, dims.h * S);
-  const isAm5 = String(comp?.socket || '').toUpperCase().includes('AM5');
+  const sock = String(comp?.socket || '').toUpperCase();
+  const isAm5 = sock.includes('AM5');
+  const isLga1700 = sock.includes('1700') || sock.includes('1851');
 
   const group = new THREE.Group();
   group.name = `Hardware_cpu_${comp?.id || 'cpu'}`;
 
-  // 1. Multi-layer Fiberglass Substrate PCB
-  const subMat = new THREE.MeshStandardMaterial({ color: 0x0c4a34, roughness: 0.52, metalness: 0.18 });
-  const substrate = new THREE.Mesh(makeExtrudedBox(w, h, 0.024, 0.012, 0.003), subMat);
+  // 1. Multi-layer Emerald/Teal Fiberglass Substrate PCB with Carved Recessed Side Keying Notches
+  const subMat = new THREE.MeshStandardMaterial({ color: 0x0b4f36, roughness: 0.48, metalness: 0.18 });
+  const hw = w / 2;
+  const hh = h / 2;
+  const cr = 0.012;
+  const notchY = h * 0.20;
+  const nr = 0.014;
+  const subShape = new THREE.Shape();
+  subShape.moveTo(-hw + cr, -hh);
+  subShape.lineTo(hw - cr, -hh);
+  subShape.quadraticCurveTo(hw, -hh, hw, -hh + cr);
+  subShape.lineTo(hw, notchY - nr);
+  subShape.absarc(hw, notchY, nr, -Math.PI / 2, Math.PI / 2, true);
+  subShape.lineTo(hw, hh - cr);
+  subShape.quadraticCurveTo(hw, hh, hw - cr, hh);
+  subShape.lineTo(-hw + cr, hh);
+  subShape.quadraticCurveTo(-hw, hh, -hw, hh - cr);
+  subShape.lineTo(-hw, notchY + nr);
+  subShape.absarc(-hw, notchY, nr, Math.PI / 2, -Math.PI / 2, true);
+  subShape.lineTo(-hw, -hh + cr);
+  subShape.quadraticCurveTo(-hw, -hh, -hw + cr, -hh);
+
+  const substrateGeo = new THREE.ExtrudeGeometry(subShape, {
+    depth: 0.020,
+    bevelEnabled: true,
+    bevelThickness: 0.0022,
+    bevelSize: 0.0022,
+    bevelSegments: 1,
+    curveSegments: 6,
+  });
+  substrateGeo.center();
+  const substrate = new THREE.Mesh(substrateGeo, subMat);
   substrate.castShadow = true;
   group.add(substrate);
 
-  // Perimeter SMD decoupling capacitors on substrate surface (signature AM5 detail)
-  const capMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.35, metalness: 0.55 });
-  const smdGeos = [];
-  for (const [sx, sy] of [
-    [-w * 0.36, -h * 0.20], [-w * 0.36, 0], [-w * 0.36, h * 0.20],
-    [w * 0.36, -h * 0.20], [w * 0.36, 0], [w * 0.36, h * 0.20],
-    [-w * 0.16, -h * 0.36], [w * 0.16, -h * 0.36],
-  ]) {
-    const s = new THREE.BoxGeometry(0.022, 0.014, 0.01);
-    s.translate(sx, sy, 0.016);
-    smdGeos.push(s);
+  // Perimeter ceramic SMD decoupling capacitor clusters (signature AM5 cutout detail & LGA array)
+  const capBodyMat = new THREE.MeshStandardMaterial({ color: 0x9a5b13, roughness: 0.36, metalness: 0.45 });
+  const capEndMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.24, metalness: 0.90 });
+  const smdBodies = [];
+  const smdEnds = [];
+  const smdCoords = isAm5
+    ? [
+        [-w * 0.37, -h * 0.21], [-w * 0.37, 0], [-w * 0.37, h * 0.21],
+        [w * 0.37, -h * 0.21], [w * 0.37, 0], [w * 0.37, h * 0.21],
+        [-w * 0.18, -h * 0.37], [0, -h * 0.37], [w * 0.18, -h * 0.37],
+        [-w * 0.18, h * 0.37], [0, h * 0.37], [w * 0.18, h * 0.37],
+      ]
+    : [
+        [-w * 0.39, -h * 0.24], [-w * 0.39, h * 0.12],
+        [w * 0.39, -h * 0.24], [w * 0.39, h * 0.12],
+      ];
+  for (const [sx, sy] of smdCoords) {
+    const b = new THREE.BoxGeometry(0.020, 0.012, 0.008);
+    b.translate(sx, sy, 0.0155);
+    smdBodies.push(b);
+    for (const ex of [-0.008, 0.008]) {
+      const e = new THREE.BoxGeometry(0.005, 0.0125, 0.0086);
+      e.translate(sx + ex, sy, 0.0155);
+      smdEnds.push(e);
+    }
   }
-  group.add(new THREE.Mesh(safeMerge(smdGeos), capMat));
+  group.add(new THREE.Mesh(safeMerge(smdBodies), capBodyMat));
+  group.add(new THREE.Mesh(safeMerge(smdEnds), capEndMat));
 
   // 2. Underside Gold Contact Pad / PGA Pin Array Texture (visible in 3D Inspector flip!)
-  const padMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.22, metalness: 0.92 });
   const bottomTex = makeCpuBottomTexture(comp);
   const bottomPlate = new THREE.Mesh(
     new THREE.PlaneGeometry(w * 0.94, h * 0.94),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, map: bottomTex, roughness: 0.28, metalness: 0.85 })
+    new THREE.MeshStandardMaterial({ color: 0xffffff, map: bottomTex, roughness: 0.26, metalness: 0.86 })
   );
   bottomPlate.rotation.y = Math.PI;
-  bottomPlate.position.z = -0.014;
+  bottomPlate.position.z = -0.0132;
   group.add(bottomPlate);
 
-  // 3. Sculpted Stepped Nickel-Plated Copper IHS (AM5 cruciform octopus OR Intel/AM4 stepped)
+  // 3. Sculpted Stepped Nickel-Plated Copper IHS (AM5 cruciform octopus OR Intel LGA1700 / AM4 stepped)
   const brushedBump = makeBrushedMetalBumpTexture();
-  const ihsTex = makeLabelTexture(
-    comp?.brand || 'CPU',
-    comp?.model || comp?.socket || '',
-    '#facc15',
-    '#94a3b8',
-    true
-  );
+  const ihsTex = makeCpuIhsTexture(comp);
   const ihsTopMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: ihsTex,
     roughness: 0.24,
-    metalness: 0.80,
+    metalness: 0.84,
     bumpMap: brushedBump,
-    bumpScale: 0.003,
+    bumpScale: 0.0025,
   });
   const nickelMat = new THREE.MeshStandardMaterial({
-    color: 0xcbd5e1,
+    color: 0xc2cbd6,
     roughness: 0.22,
-    metalness: 0.88,
+    metalness: 0.90,
     bumpMap: brushedBump,
-    bumpScale: 0.004,
+    bumpScale: 0.0035,
   });
 
   if (isAm5) {
-    // Lower octagonal/cruciform base flange + upper laser-etched IHS crown
-    const crossH = new THREE.BoxGeometry(w * 0.88, h * 0.32, 0.014);
-    crossH.translate(0, 0, 0.018);
-    const crossV = new THREE.BoxGeometry(w * 0.32, h * 0.88, 0.014);
-    crossV.translate(0, 0, 0.018);
-    const legs = new THREE.Mesh(safeMerge([crossH, crossV]), nickelMat);
-    group.add(legs);
+    // Signature AM5 8-legged thick cruciform octopus IHS with exposed perimeter cap cutouts
+    const legGeos = [];
+    const crossH = makeExtrudedBox(w * 0.90, h * 0.28, 0.022, 0.01, 0.003);
+    crossH.translate(0, 0, 0.022);
+    legGeos.push(crossH);
+    const crossV = makeExtrudedBox(w * 0.28, h * 0.90, 0.022, 0.01, 0.003);
+    crossV.translate(0, 0, 0.022);
+    legGeos.push(crossV);
+    const diag1 = makeExtrudedBox(w * 0.72, h * 0.72, 0.020, 0.016, 0.003);
+    diag1.translate(0, 0, 0.022);
+    legGeos.push(diag1);
+    group.add(new THREE.Mesh(safeMerge(legGeos), nickelMat));
+  } else if (isLga1700) {
+    // Intel LGA1700 stepped flange with side retention wings
+    const lip = new THREE.Mesh(makeExtrudedBox(w * 0.92, h * 0.90, 0.012, 0.014, 0.003), nickelMat);
+    lip.position.z = 0.018;
+    const wings = new THREE.Mesh(makeExtrudedBox(w * 0.96, h * 0.26, 0.011, 0.008, 0.002), nickelMat);
+    wings.position.z = 0.0175;
+    group.add(lip, wings);
   } else {
-    // Stepped lower IHS lip
-    const lip = new THREE.Mesh(makeExtrudedBox(w * 0.90, h * 0.90, 0.014, 0.015, 0.003), nickelMat);
+    // Square stepped lower IHS lip (AM4 / standard)
+    const lip = new THREE.Mesh(makeExtrudedBox(w * 0.90, h * 0.90, 0.014, 0.014, 0.003), nickelMat);
     lip.position.z = 0.018;
     group.add(lip);
   }
 
-  const ihsCrown = new THREE.Mesh(makeExtrudedBox(w * 0.78, h * 0.78, 0.026, 0.018, 0.004), nickelMat);
+  // Upper beveled IHS crown + crisp laser-etched face
+  const crownW = isAm5 ? w * 0.74 : w * 0.78;
+  const crownH = isAm5 ? h * 0.74 : h * 0.80;
+  const ihsCrown = new THREE.Mesh(makeExtrudedBox(crownW, crownH, 0.024, 0.016, 0.004), nickelMat);
   ihsCrown.position.z = 0.032;
   ihsCrown.castShadow = true;
   group.add(ihsCrown);
 
-  const ihsFace = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.74, h * 0.74), ihsTopMat);
-  ihsFace.position.z = 0.0475;
+  const ihsFace = new THREE.Mesh(new THREE.PlaneGeometry(crownW * 0.93, crownH * 0.93), ihsTopMat);
+  ihsFace.position.z = 0.0448;
   group.add(ihsFace);
 
-  // 4. Physical 3D Gold Pin-1 Corner Triangle (-X, +Y)
-  const tri = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.026, 3), padMat);
-  tri.rotation.x = Math.PI / 2;
-  tri.position.set(-w * 0.40, h * 0.40, 0.036);
-  group.add(tri);
+  // 4. Flush Printed Gold Pin-1 Corner Triangle on Substrate (-X, +Y) — authentic, zero floating cone
+  const triShape = new THREE.Shape();
+  triShape.moveTo(0, 0);
+  triShape.lineTo(0.056, 0);
+  triShape.lineTo(0, -0.056);
+  triShape.closePath();
+  const pin1Mat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.22, metalness: 0.92 });
+  const pin1Tri = new THREE.Mesh(new THREE.ShapeGeometry(triShape), pin1Mat);
+  pin1Tri.position.set(-w * 0.45, h * 0.45, 0.0135);
+  group.add(pin1Tri);
 
   return group;
 }
@@ -1935,7 +2611,8 @@ export function createCoolerModel(comp) {
   const dims = comp?.dimensionsMm || { w: 124, h: 155, d: 96 };
   const isLowProfile = comp?.coolerType === 'low_profile' || dims.h < 95;
   const isDualTower = comp?.coolerType === 'dual_tower';
-  const depthOut = Math.min(1.68, dims.h * S); // Protrudes along +Z from socket
+  // True total height from CPU IHS to heatpipe dome tips (strictly clears tempered glass at +1.052)
+  const depthOut = Math.min(1.56, dims.h * S - 0.04);
 
   const group = new THREE.Group();
   group.name = `Hardware_cooler_${comp?.id || 'cooler'}`;
@@ -1944,44 +2621,78 @@ export function createCoolerModel(comp) {
 
   const copperMat = new THREE.MeshStandardMaterial({
     color: 0xc86b3c,
-    roughness: 0.25,
-    metalness: 0.90,
+    roughness: 0.24,
+    metalness: 0.92,
+    bumpMap: brushedBump,
+    bumpScale: 0.0035,
+  });
+  const finMat = new THREE.MeshStandardMaterial({
+    color: 0xc5ced9,
+    roughness: 0.30,
+    metalness: 0.86,
+    bumpMap: brushedBump,
+    bumpScale: 0.0025,
+  });
+  const topCapMat = new THREE.MeshStandardMaterial({
+    color: 0x151b26,
+    roughness: 0.34,
+    metalness: 0.72,
     bumpMap: brushedBump,
     bumpScale: 0.004,
   });
-  const finMat = new THREE.MeshStandardMaterial({
-    color: 0xcbd5e1,
-    roughness: 0.30,
-    metalness: 0.85,
-    bumpMap: brushedBump,
-    bumpScale: 0.003,
-  });
-  const shroudMat = new THREE.MeshStandardMaterial({ color: 0x161d29, roughness: 0.55, metalness: 0.35 });
-  const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.22, metalness: 0.9 });
+  const shroudMat = new THREE.MeshStandardMaterial({ color: 0x161d29, roughness: 0.56, metalness: 0.30 });
+  const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.20, metalness: 0.92 });
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0xdbe3ed, roughness: 0.22, metalness: 0.94 });
 
-  // 1. Machined Copper Coldplate + Retention Crossbar & Spring Screws
-  const coldPlate = new THREE.Mesh(makeExtrudedBox(0.46, 0.46, 0.075, 0.02, 0.008), copperMat);
-  coldPlate.position.set(0, 0, 0.04);
+  // 1. Machined Copper Coldplate + Aluminum Block + Retention Crossbar & Knurled Spring Thumbscrews
+  const coldPlate = new THREE.Mesh(makeExtrudedBox(0.46, 0.46, 0.055, 0.02, 0.006), copperMat);
+  coldPlate.position.set(0, 0, 0.032);
   group.add(coldPlate);
 
-  const bracket = new THREE.Mesh(makeExtrudedBox(0.84, 0.14, 0.032, 0.01, 0.004), silverMat);
-  bracket.position.set(0, 0, 0.045);
+  const clampBlock = new THREE.Mesh(makeExtrudedBox(0.42, 0.42, 0.05, 0.016, 0.005), finMat);
+  clampBlock.position.set(0, 0, 0.082);
+  group.add(clampBlock);
+
+  const bracket = new THREE.Mesh(makeExtrudedBox(0.86, 0.13, 0.026, 0.01, 0.004), silverMat);
+  bracket.position.set(0, 0, 0.048);
   group.add(bracket);
 
-  for (const sx of [-0.36, 0.36]) {
-    const spScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.11, 12), silverMat);
-    spScrew.rotation.x = Math.PI / 2;
-    spScrew.position.set(sx, 0, 0.08);
-    group.add(spScrew);
+  const screwGeos = [];
+  for (const sx of [-0.37, 0.37]) {
+    const shaft = new THREE.CylinderGeometry(0.024, 0.024, 0.11, 12);
+    shaft.rotateX(Math.PI / 2);
+    shaft.translate(sx, 0, 0.085);
+    const head = new THREE.CylinderGeometry(0.038, 0.038, 0.026, 14);
+    head.rotateX(Math.PI / 2);
+    head.translate(sx, 0, 0.14);
+    screwGeos.push(shaft, head);
   }
+  group.add(new THREE.Mesh(safeMerge(screwGeos), silverMat));
+
+  // Helper for stainless steel fan retention wire clips wrapping from fan corners to heatsink tower grooves
+  const addWireClips = (fanX, towerHalfX, fanHalfY, zCenter, spanZ) => {
+    const wireGeos = [];
+    for (const sy of [-1, 1]) {
+      const yPos = sy * (fanHalfY * 0.88);
+      const pts = [
+        new THREE.Vector3(fanX + (fanX >= 0 ? 0.105 : -0.105), yPos, zCenter - spanZ * 0.38),
+        new THREE.Vector3(fanX + (fanX >= 0 ? 0.105 : -0.105), yPos, zCenter + spanZ * 0.38),
+        new THREE.Vector3(towerHalfX, yPos * 1.03, zCenter + spanZ * 0.34),
+        new THREE.Vector3(towerHalfX, yPos * 1.03, zCenter - spanZ * 0.34),
+      ];
+      const curve = new THREE.CatmullRomCurve3(pts, false);
+      wireGeos.push(new THREE.TubeGeometry(curve, 14, 0.0075, 6, false));
+    }
+    group.add(new THREE.Mesh(safeMerge(wireGeos), wireMat));
+  };
 
   if (isLowProfile) {
-    // Radial Aluminum Fin Petals (28 fins merged cleanly) around copper core
+    // High-density 44-fin tapered radial aluminum heatsink around a solid copper vapor core
     const petalGeos = [];
-    for (let i = 0; i < 28; i++) {
-      const a = (i / 28) * Math.PI * 2;
-      const fin = new THREE.BoxGeometry(0.28, 0.014, 0.32);
-      fin.translate(0.28, 0, 0.24);
+    for (let i = 0; i < 44; i++) {
+      const a = (i / 44) * Math.PI * 2;
+      const fin = new THREE.BoxGeometry(0.28, 0.0085, 0.27);
+      fin.translate(0.27, 0, 0.215);
       fin.rotateZ(a);
       petalGeos.push(fin);
     }
@@ -1989,18 +2700,36 @@ export function createCoolerModel(comp) {
     radialMesh.castShadow = true;
     group.add(radialMesh);
 
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.34, 18), copperMat);
+    // Brushed outer aluminum retention ring cradling radial fin tips
+    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(0.415, 0.016, 10, 36), shroudMat);
+    outerRing.position.set(0, 0, 0.34);
+    group.add(outerRing);
+
+    // Copper thermal core slug
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.30, 22), copperMat);
     core.rotation.x = Math.PI / 2;
-    core.position.set(0, 0, 0.24);
+    core.position.set(0, 0, 0.21);
     group.add(core);
 
-    const fanHousing = _makeFanAssembly(0.88, shroudMat, fanRotors, { depth: 0.20, showStruts: true });
-    fanHousing.position.set(0, 0, 0.50);
+    // 4 Corner spring push-pin mounting legs tucked cleanly under the outer radial fin ring
+    const legGeos = [];
+    for (const [lx, ly] of [[-0.275, -0.275], [0.275, -0.275], [-0.275, 0.275], [0.275, 0.275]]) {
+      const leg = new THREE.CylinderGeometry(0.020, 0.020, 0.14, 10);
+      leg.rotateX(Math.PI / 2);
+      leg.translate(lx, ly, 0.10);
+      legGeos.push(leg);
+    }
+    group.add(new THREE.Mesh(safeMerge(legGeos), shroudMat));
+
+    // Flush slim 92mm low-profile axial fan
+    const fanHousing = _makeFanAssembly(0.86, shroudMat, fanRotors, { depth: 0.17, showStruts: true, bladeCount: 11 });
+    fanHousing.position.set(0, 0, 0.44);
     group.add(fanHousing);
   } else if (isDualTower) {
-    // Dual-Tower Heatsink (Noctua NH-D15 style: 6 copper heatpipes, twin merged 20-fin stacks, top caps, dual fans)
+    // Dual-Tower Heatsink (Noctua NH-D15 / Assassin style: 6 copper U-pipes, twin 26-fin stacks, top shrouds, dual fans + wire clips)
+    const pipeGeos = [];
     const dualCapGeos = [];
-    for (const py of [-0.22, -0.13, -0.04, 0.04, 0.13, 0.22]) {
+    for (const py of [-0.24, -0.145, -0.048, 0.048, 0.145, 0.24]) {
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-0.34, py, depthOut + 0.015),
         new THREE.Vector3(-0.34, py, 0.36),
@@ -2009,70 +2738,84 @@ export function createCoolerModel(comp) {
         new THREE.Vector3(0.34, py, 0.36),
         new THREE.Vector3(0.34, py, depthOut + 0.015),
       ]);
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.022, 8, false), copperMat));
+      pipeGeos.push(new THREE.TubeGeometry(curve, 18, 0.021, 8, false));
 
       for (const tx of [-0.34, 0.34]) {
-        const cap = new THREE.CylinderGeometry(0.026, 0.026, 0.032, 10);
+        const cap = new THREE.CylinderGeometry(0.025, 0.025, 0.032, 10);
         cap.rotateX(Math.PI / 2);
-        cap.translate(tx, py, depthOut + 0.018);
-        dualCapGeos.push(cap);
+        cap.translate(tx, py, depthOut + 0.020);
+        const dome = new THREE.SphereGeometry(0.025, 10, 6);
+        dome.translate(tx, py, depthOut + 0.035);
+        dualCapGeos.push(cap, dome);
       }
     }
+    group.add(new THREE.Mesh(safeMerge(pipeGeos), copperMat));
 
-    const finCount = 20;
+    const finCount = 26;
     const finSpanZ = depthOut - 0.44;
     const towerGeos = [];
     for (const tx of [-0.34, 0.34]) {
       for (let i = 0; i < finCount; i++) {
         const z = 0.34 + (i / (finCount - 1)) * finSpanZ;
-        const fin = new THREE.BoxGeometry(0.44, 1.14, 0.015);
+        const fin = new THREE.BoxGeometry(0.43, 1.14, 0.011);
         fin.translate(tx, 0, z);
         towerGeos.push(fin);
       }
-      const capPlate = new THREE.Mesh(makeExtrudedBox(0.46, 1.16, 0.032, 0.018, 0.005), shroudMat);
-      capPlate.position.set(tx, 0, depthOut - 0.01);
+      const capPlate = new THREE.Mesh(makeExtrudedBox(0.45, 1.16, 0.034, 0.02, 0.006), topCapMat);
+      capPlate.position.set(tx, 0, depthOut - 0.005);
       group.add(capPlate);
+
+      // Subtle machined decorative accent stripe on each tower cap
+      const accentBar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.88, 0.008), silverMat);
+      accentBar.position.set(tx + (tx < 0 ? -0.14 : 0.14), 0, depthOut + 0.015);
+      group.add(accentBar);
     }
     const mergedFins = new THREE.Mesh(safeMerge(towerGeos), finMat);
     mergedFins.castShadow = true;
     group.add(mergedFins);
     group.add(new THREE.Mesh(safeMerge(dualCapGeos), copperMat));
 
-    // Dual 120mm Fans (Center & Front)
+    // Dual 120mm Fans (Center & Front raised slightly along +Z to clear tall DDR5 RAM modules cleanly!)
     const centerFan = _makeFanAssembly(1.06, shroudMat, fanRotors, { depth: 0.22, accentColor: 0xd97706 });
     centerFan.rotation.y = Math.PI / 2;
     centerFan.position.set(0.0, 0, depthOut * 0.58);
+    const frontFanZ = Math.min(depthOut - 0.52, depthOut * 0.65);
     const frontFan = _makeFanAssembly(1.06, shroudMat, fanRotors, { depth: 0.22, accentColor: 0xd97706 });
     frontFan.rotation.y = Math.PI / 2;
-    frontFan.position.set(0.70, 0, depthOut * 0.58);
+    frontFan.position.set(0.68, 0, frontFanZ);
     group.add(centerFan, frontFan);
+    addWireClips(0.68, 0.42, 0.52, frontFanZ, 0.90);
   } else {
-    // Single-Tower Heatsink (DeepCool AK400 style: 4 U-heatpipes + 24 merged aluminum fins + top cap + heatpipe tips)
+    // Single-Tower Heatsink (AK400 / NH-U12S style: 4 U-heatpipes, 32 merged crisp aluminum fins, top shroud, wire clips)
+    const pipeGeos = [];
     const capGeos = [];
-    for (const py of [-0.16, -0.055, 0.055, 0.16]) {
+    for (const py of [-0.18, -0.06, 0.06, 0.18]) {
       const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.22, py, depthOut + 0.02),
-        new THREE.Vector3(-0.22, py, 0.34),
-        new THREE.Vector3(0, py, 0.065),
-        new THREE.Vector3(0.22, py, 0.34),
-        new THREE.Vector3(0.22, py, depthOut + 0.02),
+        new THREE.Vector3(-0.21, py, depthOut + 0.016),
+        new THREE.Vector3(-0.21, py, 0.34),
+        new THREE.Vector3(0, py, 0.062),
+        new THREE.Vector3(0.21, py, 0.34),
+        new THREE.Vector3(0.21, py, depthOut + 0.016),
       ]);
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.024, 8, false), copperMat));
+      pipeGeos.push(new THREE.TubeGeometry(curve, 16, 0.022, 8, false));
 
-      for (const sx of [-0.22, 0.22]) {
-        const cap = new THREE.CylinderGeometry(0.028, 0.028, 0.036, 10);
+      for (const sx of [-0.21, 0.21]) {
+        const cap = new THREE.CylinderGeometry(0.026, 0.026, 0.032, 10);
         cap.rotateX(Math.PI / 2);
         cap.translate(sx, py, depthOut + 0.022);
-        capGeos.push(cap);
+        const dome = new THREE.SphereGeometry(0.026, 10, 6);
+        dome.translate(sx, py, depthOut + 0.038);
+        capGeos.push(cap, dome);
       }
     }
+    group.add(new THREE.Mesh(safeMerge(pipeGeos), copperMat));
 
-    const finCount = 24;
+    const finCount = 32;
     const finSpanZ = depthOut - 0.34;
     const finGeos = [];
     for (let i = 0; i < finCount; i++) {
       const fz = 0.28 + (i / (finCount - 1)) * finSpanZ;
-      const f = new THREE.BoxGeometry(0.68, 1.08, 0.015);
+      const f = new THREE.BoxGeometry(0.66, 1.08, 0.010);
       f.translate(0, 0, fz);
       finGeos.push(f);
     }
@@ -2080,17 +2823,26 @@ export function createCoolerModel(comp) {
     finStack.castShadow = true;
     group.add(finStack);
 
-    // Top anodized brushed cap plate + protruding metallic heatpipe end-caps
-    const topCap = new THREE.Mesh(makeExtrudedBox(0.70, 1.10, 0.038, 0.02, 0.006), shroudMat);
+    // Anodized brushed top shroud plate + matrix grooves + protruding domed heatpipe end-caps
+    const topCap = new THREE.Mesh(makeExtrudedBox(0.69, 1.11, 0.038, 0.022, 0.006), topCapMat);
     topCap.position.set(0, 0, depthOut);
     group.add(topCap);
+
+    const grooveGeos = [];
+    for (const gy of [-0.40, -0.32, 0.32, 0.40]) {
+      const gr = new THREE.BoxGeometry(0.52, 0.022, 0.008);
+      gr.translate(0, gy, depthOut + 0.020);
+      grooveGeos.push(gr);
+    }
+    group.add(new THREE.Mesh(safeMerge(grooveGeos), silverMat));
     group.add(new THREE.Mesh(safeMerge(capGeos), copperMat));
 
-    // Side-mounted 120mm PWM Fan pushing toward rear (-X) + stainless wire clips
+    // Side-mounted 120mm PWM Fan pushing toward rear (-X) + stainless steel wire clips
     const fanAssembly = _makeFanAssembly(1.06, shroudMat, fanRotors, { depth: 0.22, accentColor: 0x06b6d4 });
     fanAssembly.rotation.y = Math.PI / 2;
-    fanAssembly.position.set(0.46, 0, depthOut * 0.58);
+    fanAssembly.position.set(0.45, 0, depthOut * 0.58);
     group.add(fanAssembly);
+    addWireClips(0.45, 0.16, 0.52, depthOut * 0.58, 0.92);
   }
 
   group.userData.fanRotors = fanRotors;
@@ -2098,7 +2850,8 @@ export function createCoolerModel(comp) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. RAM (Exposed DRAM ICs, Notched 288-Pin Gold Fingers, Beveled Heatspreader, RGB Spine)
+// 5. RAM (Sculpted Stepped Aluminum Heatspreader, Exposed DRAM ICs + SMD Caps,
+//    Notched 288-Pin Gold Fingers, DDR5 Diffuser Light-Bar / DDR4 Fin Comb)
 // ---------------------------------------------------------------------------
 
 export function createRamModel(comp) {
@@ -2113,83 +2866,135 @@ export function createRamModel(comp) {
   group.name = `Hardware_ram_${comp?.id || 'ram'}`;
 
   const spreaderMat = new THREE.MeshStandardMaterial({
-    color: isDdr5 ? 0x1e293b : 0x262626,
+    color: isDdr5 ? 0x1b2434 : 0x222730,
     roughness: 0.28,
-    metalness: 0.78,
+    metalness: 0.80,
     bumpMap: brushedBump,
-    bumpScale: 0.004,
+    bumpScale: 0.0035,
   });
-  const accentMat = new THREE.MeshStandardMaterial({
-    color: isDdr5 ? 0x38bdf8 : 0xef4444,
-    emissive: isDdr5 ? 0x0284c7 : 0x991b1b,
-    emissiveIntensity: 0.35,
-    roughness: 0.25,
-    metalness: 0.2,
+  const trimMetalMat = new THREE.MeshStandardMaterial({
+    color: isDdr5 ? 0x64748b : 0x991b1b,
+    roughness: 0.26,
+    metalness: 0.86,
+  });
+  const rgbDiffuserMat = new THREE.MeshStandardMaterial({
+    color: 0xe0f2fe,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.28,
+    roughness: 0.24,
+    metalness: 0.08,
   });
   const goldTex = makeGoldFingersTexture(72, 0.38);
   const fingersMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: goldTex,
-    roughness: 0.24,
-    metalness: 0.88,
+    roughness: 0.22,
+    metalness: 0.90,
   });
-  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.65, metalness: 0.1 });
-  const icMat = new THREE.MeshStandardMaterial({ color: 0x171c26, roughness: 0.5, metalness: 0.2 });
+  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.62, metalness: 0.12 });
+  const icMat = new THREE.MeshStandardMaterial({ color: 0x161c26, roughness: 0.48, metalness: 0.22 });
+  const smdGoldMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.32, metalness: 0.72 });
 
-  const badgeTex = makeLabelTexture(
-    comp?.brand || (isDdr5 ? 'DDR5' : 'DDR4'),
-    `${comp?.speed_mhz || (isDdr5 ? 5600 : 3200)} MHz`,
-    isDdr5 ? '#38bdf8' : '#ef4444',
-    '#111827',
-    false,
-    512,
-    128
-  );
-  const badgeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: badgeTex, roughness: 0.38 });
+  const badgeTex = makeRamSpreaderTexture(comp, isDdr5);
+  const badgeMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: badgeTex,
+    roughness: 0.34,
+    metalness: 0.45,
+  });
 
   for (let i = 0; i < sticks; i++) {
     const stick = new THREE.Group();
     // Aligned with pc-anatomy 4-slot spacing (0.63, 0.73, 0.83, 0.93) relative to anchor x = 0.78 (A2 & B2!)
     const xOffset = sticks === 2 ? (i === 0 ? -0.05 : 0.15) : -0.05;
 
-    // 1. Internal PCB Blade + Visible Lower DRAM IC Band
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.018, length, heightOut * 0.78), pcbMat);
+    // 1. Multi-layer Internal PCB Blade + Side Latch Cutouts
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.016, length, heightOut * 0.78), pcbMat);
     pcb.position.z = heightOut * 0.42;
     stick.add(pcb);
 
-    // 8x Exposed FBGA DRAM Chips visible above the gold edge fingers!
+    // 8x Exposed FBGA DRAM ICs + Tiny SMD Decoupling Capacitors above Gold Fingers
     const icGeos = [];
+    const smdGeos = [];
     for (let c = 0; c < 8; c++) {
       const cy = -length * 0.40 + c * (length * 0.114);
-      const icL = new THREE.BoxGeometry(0.028, length * 0.075, heightOut * 0.16);
-      icL.translate(0, cy, heightOut * 0.18);
+      const icL = new THREE.BoxGeometry(0.028, length * 0.072, heightOut * 0.14);
+      icL.translate(0, cy, heightOut * 0.19);
       icGeos.push(icL);
+
+      const cap = new THREE.BoxGeometry(0.022, 0.016, 0.012);
+      cap.translate(0, cy, heightOut * 0.105);
+      smdGeos.push(cap);
     }
     stick.add(new THREE.Mesh(safeMerge(icGeos), icMat));
+    stick.add(new THREE.Mesh(safeMerge(smdGeos), smdGoldMat));
 
-    // 2. Sculpted Chamfered Aluminum Heatspreader Upper Body
-    const body = new THREE.Mesh(makeExtrudedBox(0.068, length, heightOut * 0.68, 0.015, 0.008), spreaderMat);
-    body.position.z = heightOut * 0.56;
-    body.castShadow = true;
-    stick.add(body);
+    // 2. Sculpted Multi-Tier Faceted Aluminum Heatspreader
+    const mainBody = new THREE.Mesh(makeExtrudedBox(0.062, length * 0.99, heightOut * 0.62, 0.012, 0.006), spreaderMat);
+    mainBody.position.z = heightOut * 0.56;
+    mainBody.castShadow = true;
+    stick.add(mainBody);
 
-    const sticker = new THREE.Mesh(new THREE.PlaneGeometry(length * 0.64, heightOut * 0.34), badgeMat);
-    sticker.rotation.y = Math.PI / 2;
-    sticker.rotation.z = Math.PI / 2;
-    sticker.position.set(0.036, 0, heightOut * 0.56);
-    stick.add(sticker);
+    // Raised stepped angular center shoulder + horizontal CNC ribs on both faces
+    const shoulderGeos = [];
+    const midPlate = makeExtrudedBox(0.072, length * 0.76, heightOut * 0.36, 0.01, 0.004);
+    midPlate.translate(0, 0, heightOut * 0.58);
+    shoulderGeos.push(midPlate);
+    for (const ry of [-length * 0.43, length * 0.43]) {
+      const wing = makeExtrudedBox(0.068, length * 0.10, heightOut * 0.50, 0.008, 0.003);
+      wing.translate(0, ry, heightOut * 0.60);
+      shoulderGeos.push(wing);
+    }
+    stick.add(new THREE.Mesh(safeMerge(shoulderGeos), spreaderMat));
 
-    // 3. Diffused Top RGB / Anodized Spine Bar
-    const topBar = new THREE.Mesh(makeExtrudedBox(0.052, length * 0.96, 0.054, 0.01, 0.005), accentMat);
-    topBar.position.z = heightOut * 0.91;
-    stick.add(topBar);
+    // Recessed flush silkscreened brand plate on BOTH +X and -X flanks
+    const stickerR = new THREE.Mesh(new THREE.PlaneGeometry(length * 0.66, heightOut * 0.28), badgeMat);
+    stickerR.rotation.y = Math.PI / 2;
+    stickerR.rotation.z = Math.PI / 2;
+    stickerR.position.set(0.0372, 0, heightOut * 0.58);
+
+    const stickerL = new THREE.Mesh(new THREE.PlaneGeometry(length * 0.66, heightOut * 0.28), badgeMat);
+    stickerL.rotation.y = -Math.PI / 2;
+    stickerL.rotation.z = -Math.PI / 2;
+    stickerL.position.set(-0.0372, 0, heightOut * 0.58);
+    stick.add(stickerR, stickerL);
+
+    // 3. Top Crest: DDR5 Frosted RGB Diffuser + Anodized Clasps OR DDR4 Serrated Cooling Fin Comb
+    if (isDdr5) {
+      const lightBar = new THREE.Mesh(makeExtrudedBox(0.044, length * 0.94, 0.056, 0.008, 0.004), rgbDiffuserMat);
+      lightBar.position.z = heightOut * 0.90;
+      stick.add(lightBar);
+
+      // 2 Machined metallic bridge clasps wrapping across the light-pipe
+      const claspGeos = [];
+      for (const cy of [-length * 0.24, length * 0.24]) {
+        const cl = new THREE.BoxGeometry(0.052, 0.055, 0.064);
+        cl.translate(0, cy, heightOut * 0.90);
+        claspGeos.push(cl);
+      }
+      stick.add(new THREE.Mesh(safeMerge(claspGeos), spreaderMat));
+    } else {
+      // Precision anodized aluminum serrated top cooling comb + thin metallic accent trim
+      const combGeos = [];
+      for (let t = 0; t < 12; t++) {
+        const ty = -length * 0.44 + (t / 11) * (length * 0.88);
+        const tooth = new THREE.BoxGeometry(0.052, 0.068, 0.052);
+        tooth.translate(0, ty, heightOut * 0.90);
+        combGeos.push(tooth);
+      }
+      stick.add(new THREE.Mesh(safeMerge(combGeos), spreaderMat));
+
+      const trimLine = new THREE.Mesh(new THREE.BoxGeometry(0.068, length * 0.86, 0.014), trimMetalMat);
+      trimLine.position.z = heightOut * 0.855;
+      stick.add(trimLine);
+    }
 
     // 4. Asymmetric Keyed 288-Pin Gold Edge Connector (split around physical key notch!)
-    const upperPins = new THREE.Mesh(new THREE.BoxGeometry(0.022, length * 0.53, 0.062), fingersMat);
-    upperPins.position.set(0, length * 0.215, 0.03);
-    const lowerPins = new THREE.Mesh(new THREE.BoxGeometry(0.022, length * 0.37, 0.062), fingersMat);
-    lowerPins.position.set(0, -length * 0.295, 0.03);
-    const notchGap = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.048, 0.045), pcbMat);
+    const upperPins = new THREE.Mesh(new THREE.BoxGeometry(0.020, length * 0.53, 0.062), fingersMat);
+    upperPins.position.set(0, length * 0.215, 0.031);
+    const lowerPins = new THREE.Mesh(new THREE.BoxGeometry(0.020, length * 0.37, 0.062), fingersMat);
+    lowerPins.position.set(0, -length * 0.295, 0.031);
+    const notchGap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.048, 0.045), pcbMat);
     notchGap.position.set(0, -length * 0.08, 0.035);
     stick.add(upperPins, lowerPins, notchGap);
 
@@ -2201,8 +3006,9 @@ export function createRamModel(comp) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. GPU (Exposed Fin Stack, Curved Heatpipes, Cutout Shroud, Swept Axial Fans,
-//    Vented Backplate with Die X-Clamp, Rear Display Ports & PCIe Gold Fingers)
+// 6. GPU (Z-Fight-Free Heatsink Stack, Curved Heatpipes, Sculpted Shroud,
+//    Swept Axial Fans, Louvered Vented Backplate with Die SMD Array & X-Clamp,
+//    Dual-Slot Shielded HDMI/DP Bracket, 12VHPWR/8-Pin Header & PCIe Gold Fingers)
 // ---------------------------------------------------------------------------
 
 export function createGpuModel(comp) {
@@ -2212,116 +3018,205 @@ export function createGpuModel(comp) {
   const thickY = dims.d * S;
   const fanCount = len >= 2.9 ? 3 : 2;
 
+  const tag = `${comp?.brand || ''} ${comp?.model || ''} ${comp?.name || ''}`.toUpperCase();
+  const isAmd = tag.includes('RADEON') || tag.includes('RX ') || tag.includes('AMD');
+  const isIntel = tag.includes('ARC') || tag.includes('INTEL');
+  const brandAccentHex = isAmd ? 0xef4444 : isIntel ? 0x38bdf8 : 0x76b900;
+
   const group = new THREE.Group();
   group.name = `Hardware_gpu_${comp?.id || 'gpu'}`;
   const fanRotors = [];
   const brushedBump = makeBrushedMetalBumpTexture();
 
   const shroudMat = new THREE.MeshStandardMaterial({
-    color: 0x1b2331,
-    roughness: 0.42,
-    metalness: 0.55,
+    color: 0x1b222e,
+    roughness: 0.44,
+    metalness: 0.48,
+    bumpMap: brushedBump,
+    bumpScale: 0.0035,
+  });
+  const shroudAccentMat = new THREE.MeshStandardMaterial({
+    color: 0x3a4659,
+    roughness: 0.28,
+    metalness: 0.84,
     bumpMap: brushedBump,
     bumpScale: 0.004,
   });
   const backplateMat = new THREE.MeshStandardMaterial({
-    color: 0x131a26,
+    color: 0x151c27,
     roughness: 0.30,
     metalness: 0.78,
     bumpMap: brushedBump,
-    bumpScale: 0.004,
+    bumpScale: 0.0035,
   });
-  const finMat = new THREE.MeshStandardMaterial({ color: 0xbac4d1, roughness: 0.34, metalness: 0.86 });
-  const copperMat = new THREE.MeshStandardMaterial({ color: 0xc86b3c, roughness: 0.25, metalness: 0.90 });
-  const steelMat = new THREE.MeshStandardMaterial({ color: 0xdbe3ed, roughness: 0.24, metalness: 0.90 });
-  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.65, metalness: 0.14 });
+  const finMat = new THREE.MeshStandardMaterial({ color: 0xbac4d1, roughness: 0.32, metalness: 0.88 });
+  const copperMat = new THREE.MeshStandardMaterial({ color: 0xc86b3c, roughness: 0.24, metalness: 0.92 });
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0xdbe3ed, roughness: 0.22, metalness: 0.92 });
+  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.64, metalness: 0.14 });
+  const portDarkMat = new THREE.MeshStandardMaterial({ color: 0x070a10, roughness: 0.82, metalness: 0.1 });
+  const smdMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.32, metalness: 0.75 });
   const goldMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: makeGoldFingersTexture(84, 0.22),
     roughness: 0.22,
-    metalness: 0.9,
+    metalness: 0.90,
   });
 
   const centerShiftX = (len - 2.0) * 0.5;
+  // Real ATX PCIe vertical anatomy:
+  // - PCIe edge fingers & GPU PCB sit flush at y = 0.0 (directly in the motherboard PCIe x16 slot!)
+  // - Vented backplate sits directly above PCB at y = +0.032 (clears M.2 & CPU cooler cleanly!)
+  // - Heatsink, heatpipes, shroud & axial fans hang DOWNWARD (-Y) across 2–3 expansion slots!
+  const dropY = Math.max(0.32, thickY - 0.035);
+  const bodyCenterY = -dropY * 0.48;
 
-  // 1. Packed Multi-Fin Aluminum Heatsink Array (42 crisp fins merged into 1 geometry!)
-  const finCount = 42;
-  const finSpanX = len * 0.91;
+  // 1. Packed Multi-Fin Aluminum Heatsink Array (strictly bounded below PCB & backplate — ZERO Z-fighting!)
+  const finCount = 46;
+  const finSpanX = len * 0.88;
+  const finH = dropY * 0.58; // Spans y = -(dropY*0.16) down to -(dropY*0.74), strictly under PCB (0.0)
+  const finCenterY = -dropY * 0.44;
   const finGeos = [];
   for (let i = 0; i < finCount; i++) {
     const fx = centerShiftX - finSpanX * 0.5 + (i / (finCount - 1)) * finSpanX;
-    const fg = new THREE.BoxGeometry(0.016, thickY * 0.68, depthZ * 0.84);
-    fg.translate(fx, -thickY * 0.04, depthZ * 0.48);
+    const fg = new THREE.BoxGeometry(0.014, finH, depthZ * 0.78);
+    fg.translate(fx, finCenterY, depthZ * 0.49);
     finGeos.push(fg);
   }
   const heatsink = new THREE.Mesh(safeMerge(finGeos), finMat);
   heatsink.castShadow = true;
   group.add(heatsink);
 
-  // 2. 4 Curved Copper/Nickel Heatpipes running lengthwise through the heatsink stack
+  // 2. 4 Curved Copper Heatpipes running through fin stack beneath PCB
+  const pipeGeos = [];
   for (const [hz, hy] of [
-    [depthZ * 0.22, 0.02],
-    [depthZ * 0.42, -0.02],
-    [depthZ * 0.65, -0.02],
-    [depthZ * 0.84, 0.02],
+    [depthZ * 0.22, -dropY * 0.34],
+    [depthZ * 0.44, -dropY * 0.48],
+    [depthZ * 0.66, -dropY * 0.48],
+    [depthZ * 0.88, -dropY * 0.34],
   ]) {
     const pipeCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(centerShiftX - len * 0.44, hy, hz),
-      new THREE.Vector3(centerShiftX - len * 0.12, 0.04, depthZ * 0.48),
-      new THREE.Vector3(centerShiftX + len * 0.14, 0.04, depthZ * 0.48),
-      new THREE.Vector3(centerShiftX + len * 0.44, hy, hz),
+      new THREE.Vector3(centerShiftX - len * 0.43, hy, hz),
+      new THREE.Vector3(centerShiftX - len * 0.14, -dropY * 0.28, depthZ * 0.49),
+      new THREE.Vector3(centerShiftX + len * 0.14, -dropY * 0.28, depthZ * 0.49),
+      new THREE.Vector3(centerShiftX + len * 0.43, hy, hz),
     ]);
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(pipeCurve, 16, 0.022, 8, false), copperMat));
+    pipeGeos.push(new THREE.TubeGeometry(pipeCurve, 16, 0.021, 8, false));
   }
+  group.add(new THREE.Mesh(safeMerge(pipeGeos), copperMat));
 
-  // 3. Internal Matte PCB Layer + Visible VRAM Chips + Gold PCIe x16 Edge Fingers
-  const gpuPcb = new THREE.Mesh(new THREE.BoxGeometry(len * 0.72, 0.024, depthZ * 0.90), pcbMat);
-  gpuPcb.position.set(centerShiftX - len * 0.11, thickY * 0.34, depthZ * 0.46);
+  // 3. Internal Multi-Layer PCB flush at y = 0.0 directly joining Gold PCIe x16 Edge Fingers & Retention Hook
+  const gpuPcb = new THREE.Mesh(new THREE.BoxGeometry(len * 0.72, 0.022, depthZ * 0.88), pcbMat);
+  gpuPcb.position.set(centerShiftX - len * 0.11, 0.004, depthZ * 0.46);
   group.add(gpuPcb);
 
-  const pcieFingers = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.032, 0.095), goldMat);
+  const pcieFingers = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.026, 0.092), goldMat);
   pcieFingers.position.set(0.0, 0.0, 0.0);
-  group.add(pcieFingers);
+  const pcieHook = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.022, 0.075), pcbMat);
+  pcieHook.position.set(0.51, 0.0, 0.018);
+  group.add(pcieFingers, pcieHook);
 
-  // 4. Vented Metal Backplate + Exposed Die Cutout & Silver X-Clamp Spring Bracket
-  const bpShape = makeRoundedRectShape(len, depthZ, 0.03);
-  // Flow-through cooling vent on right +X tail
+  // 4. Brushed Anodized Vented Backplate (+Y directly above PCB) with Flow-Through Louvers, Core SMD Bay & X-Clamp
+  const bpY = 0.032;
+  const bpShape = makeRoundedRectShape(len, depthZ, 0.035);
   const ventCut = new THREE.Path();
-  ventCut.moveTo(len * 0.18, -depthZ * 0.32);
-  ventCut.lineTo(len * 0.44, -depthZ * 0.32);
-  ventCut.lineTo(len * 0.44, depthZ * 0.32);
-  ventCut.lineTo(len * 0.18, depthZ * 0.32);
+  ventCut.moveTo(len * 0.18, -depthZ * 0.31);
+  ventCut.lineTo(len * 0.43, -depthZ * 0.31);
+  ventCut.lineTo(len * 0.43, depthZ * 0.31);
+  ventCut.lineTo(len * 0.18, depthZ * 0.31);
   ventCut.closePath();
   bpShape.holes.push(ventCut);
 
-  // GPU core rear X-clamp inspection window
   const coreCut = new THREE.Path();
-  coreCut.moveTo(-len * 0.24, -0.14);
-  coreCut.lineTo(-len * 0.04, -0.14);
-  coreCut.lineTo(-len * 0.04, 0.14);
-  coreCut.lineTo(-len * 0.24, 0.14);
+  coreCut.moveTo(-len * 0.23, -0.14);
+  coreCut.lineTo(-len * 0.05, -0.14);
+  coreCut.lineTo(-len * 0.05, 0.14);
+  coreCut.lineTo(-len * 0.23, 0.14);
   coreCut.closePath();
   bpShape.holes.push(coreCut);
 
-  const bpGeo = new THREE.ExtrudeGeometry(bpShape, { depth: 0.024, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.005, bevelSegments: 1 });
+  const bpGeo = new THREE.ExtrudeGeometry(bpShape, {
+    depth: 0.022,
+    bevelEnabled: true,
+    bevelThickness: 0.004,
+    bevelSize: 0.004,
+    bevelSegments: 1,
+  });
   bpGeo.center();
   bpGeo.rotateX(Math.PI / 2);
   const backplate = new THREE.Mesh(bpGeo, backplateMat);
-  backplate.position.set(centerShiftX, thickY * 0.48, depthZ * 0.5);
+  backplate.position.set(centerShiftX, bpY, depthZ * 0.50);
   group.add(backplate);
 
-  // Silver X-Clamp bracket visible inside core backplate cutout
-  const xBar1 = new THREE.BoxGeometry(0.24, 0.015, 0.035);
+  // Laser-etched subtle backplate geometric graphics overlay
+  const bpDecalTex = makeGpuBackplateDecalTexture(comp);
+  const bpDecal = new THREE.Mesh(
+    new THREE.PlaneGeometry(len * 0.62, depthZ * 0.78),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: bpDecalTex,
+      transparent: true,
+      roughness: 0.35,
+      metalness: 0.4,
+      depthWrite: false,
+    })
+  );
+  bpDecal.rotation.x = -Math.PI / 2;
+  bpDecal.position.set(centerShiftX - len * 0.16, bpY + 0.016, depthZ * 0.50);
+  group.add(bpDecal);
+
+  // Diagonal aluminum louver slats across flow-through vent window
+  const louverGeos = [];
+  for (let l = 0; l < 5; l++) {
+    const lx = centerShiftX + len * (0.21 + l * 0.048);
+    const bar = new THREE.BoxGeometry(0.022, 0.016, depthZ * 0.60);
+    bar.rotateY(0.18);
+    bar.translate(lx, bpY, depthZ * 0.50);
+    louverGeos.push(bar);
+  }
+  group.add(new THREE.Mesh(safeMerge(louverGeos), shroudAccentMat));
+
+  // Exposed rear GPU die MLCC capacitor cluster + Brushed Steel X-Clamp with 4 corner screws
+  const dieCapGeos = [];
+  const coreX = centerShiftX - len * 0.14;
+  for (let r = -2; r <= 2; r++) {
+    for (let c = -2; c <= 2; c++) {
+      if (Math.abs(r) <= 0.5 && Math.abs(c) <= 0.5) continue;
+      const cg = new THREE.BoxGeometry(0.018, 0.010, 0.012);
+      cg.translate(coreX + c * 0.032, 0.018, depthZ * 0.50 + r * 0.032);
+      dieCapGeos.push(cg);
+    }
+  }
+  group.add(new THREE.Mesh(safeMerge(dieCapGeos), smdMat));
+
+  const xBar1 = new THREE.BoxGeometry(0.24, 0.012, 0.030);
   xBar1.rotateY(Math.PI / 4);
-  const xBar2 = new THREE.BoxGeometry(0.24, 0.015, 0.035);
+  const xBar2 = new THREE.BoxGeometry(0.24, 0.012, 0.030);
   xBar2.rotateY(-Math.PI / 4);
-  const xClamp = new THREE.Mesh(safeMerge([xBar1, xBar2]), steelMat);
-  xClamp.position.set(centerShiftX - len * 0.14, thickY * 0.46, depthZ * 0.5);
+  const clampScrews = [xBar1, xBar2];
+  for (const [sx, sz] of [[-0.08, -0.08], [0.08, -0.08], [-0.08, 0.08], [0.08, 0.08]]) {
+    const cs = new THREE.CylinderGeometry(0.018, 0.018, 0.022, 10);
+    cs.translate(sx, 0.007, sz);
+    clampScrews.push(cs);
+  }
+  const xClamp = new THREE.Mesh(safeMerge(clampScrews), steelMat);
+  xClamp.position.set(coreX, bpY - 0.002, depthZ * 0.50);
   group.add(xClamp);
 
-  // 5. Sculpted Bottom Shroud Plate with Circular Fan Cutouts + Swept Axial Fans
+  // 6 tiny perimeter backplate hex screws
+  const bpScrewGeos = [];
+  for (const [bx, bz] of [
+    [-len * 0.45, -depthZ * 0.40], [0, -depthZ * 0.40], [len * 0.45, -depthZ * 0.40],
+    [-len * 0.45, depthZ * 0.40], [0, depthZ * 0.40], [len * 0.45, depthZ * 0.40],
+  ]) {
+    const bs = new THREE.CylinderGeometry(0.016, 0.016, 0.014, 6);
+    bs.translate(centerShiftX + bx, bpY + 0.014, depthZ * 0.50 + bz);
+    bpScrewGeos.push(bs);
+  }
+  group.add(new THREE.Mesh(safeMerge(bpScrewGeos), steelMat));
+
+  // 5. Sculpted Multi-Plane Bottom Fan Shroud (-Y) with Chamfered Fan Bores & Metallic Trim Accents
   const fanSize = Math.min(0.84, (len * 0.78) / fanCount);
-  const shroudShape = makeRoundedRectShape(len, depthZ, 0.04);
+  const shroudShape = makeRoundedRectShape(len, depthZ, 0.045);
   const fanXCoords = [];
   for (let i = 0; i < fanCount; i++) {
     const localFx = -((fanCount - 1) * 0.5 * (fanSize * 1.06)) + i * (fanSize * 1.06);
@@ -2330,86 +3225,119 @@ export function createGpuModel(comp) {
     hole.absarc(localFx, 0, fanSize * 0.445, 0, Math.PI * 2, true);
     shroudShape.holes.push(hole);
   }
+  const shroudDepth = dropY * 0.28;
   const shroudGeo = new THREE.ExtrudeGeometry(shroudShape, {
-    depth: thickY * 0.24,
+    depth: shroudDepth,
     bevelEnabled: true,
-    bevelThickness: 0.01,
-    bevelSize: 0.01,
-    bevelSegments: 1,
-    curveSegments: 14,
+    bevelThickness: 0.010,
+    bevelSize: 0.010,
+    bevelSegments: 2,
+    curveSegments: 18,
   });
   shroudGeo.center();
   shroudGeo.rotateX(Math.PI / 2);
+  const shroudY = -dropY + shroudDepth * 0.5 + 0.012;
   const shroud = new THREE.Mesh(shroudGeo, shroudMat);
-  shroud.position.set(centerShiftX, -thickY * 0.36, depthZ * 0.5);
+  shroud.position.set(centerShiftX, shroudY, depthZ * 0.50);
   shroud.castShadow = true;
   group.add(shroud);
 
-  // Sleek side shroud bezel framing the exposed aluminum heatsink fins on +Z edge
-  const endCapL = new THREE.Mesh(new THREE.BoxGeometry(0.14, thickY * 0.86, 0.08), shroudMat);
-  endCapL.position.set(centerShiftX - len * 0.45, 0.02, depthZ - 0.03);
-  const endCapR = new THREE.Mesh(new THREE.BoxGeometry(0.18, thickY * 0.86, depthZ * 0.94), shroudMat);
-  endCapR.position.set(centerShiftX + len * 0.46, 0.02, depthZ * 0.50);
-  const sideTopRail = new THREE.Mesh(new THREE.BoxGeometry(len * 0.98, 0.055, 0.075), shroudMat);
-  sideTopRail.position.set(centerShiftX, thickY * 0.43, depthZ - 0.025);
+  // Machined brushed-gunmetal fan-bore trim rings on bottom shroud face
+  const trimRingGeos = [];
+  for (const localFx of fanXCoords) {
+    const tr = new THREE.TorusGeometry(fanSize * 0.455, 0.013, 8, 28);
+    tr.rotateX(Math.PI / 2);
+    tr.translate(centerShiftX + localFx, -dropY + 0.004, depthZ * 0.50);
+    trimRingGeos.push(tr);
+  }
+  group.add(new THREE.Mesh(safeMerge(trimRingGeos), shroudAccentMat));
+
+  // Sculpted Side Shroud Frame (+Z) revealing aluminum fins + sleek satin nameplate + thin accent LED
+  const endCapL = new THREE.Mesh(makeExtrudedBox(0.14, dropY * 0.90, 0.08, 0.015, 0.005), shroudMat);
+  endCapL.position.set(centerShiftX - len * 0.46, bodyCenterY, depthZ - 0.035);
+  const endCapR = new THREE.Mesh(makeExtrudedBox(0.16, dropY * 0.90, depthZ * 0.94, 0.02, 0.006), shroudMat);
+  endCapR.position.set(centerShiftX + len * 0.46, bodyCenterY, depthZ * 0.50);
+  const sideTopRail = new THREE.Mesh(makeExtrudedBox(len * 0.96, 0.048, 0.08, 0.01, 0.004), shroudAccentMat);
+  sideTopRail.position.set(centerShiftX, -0.012, depthZ - 0.03);
   const sideLedBar = new THREE.Mesh(
-    new THREE.BoxGeometry(len * 0.52, 0.018, 0.014),
-    new THREE.MeshStandardMaterial({ color: 0x3ecf5e, emissive: 0x22c55e, emissiveIntensity: 0.42 })
+    new THREE.BoxGeometry(len * 0.48, 0.012, 0.014),
+    new THREE.MeshStandardMaterial({
+      color: brandAccentHex,
+      emissive: brandAccentHex,
+      emissiveIntensity: 0.45,
+      roughness: 0.25,
+    })
   );
-  sideLedBar.position.set(centerShiftX + 0.06, thickY * 0.43, depthZ + 0.016);
+  sideLedBar.position.set(centerShiftX - 0.04, -0.012, depthZ + 0.012);
   group.add(endCapL, endCapR, sideTopRail, sideLedBar);
 
-  // Side illuminated brand nameplate (+Z visible face facing viewer, crisp 5:1 canvas aspect)
-  const gpuTex = makeLabelTexture(
-    comp?.model || comp?.name || 'GeForce RTX',
-    `${comp?.vram_gb || 8}GB VRAM · ${comp?.tdp_watts || 150}W`,
-    '#3ecf5e',
-    '#0b1322',
-    false,
-    1024,
-    200
-  );
-  const badgeW = Math.min(1.28, len * 0.52);
-  const badgeH = Math.max(0.24, thickY * 0.48);
-  const sideBadgeBack = new THREE.Mesh(new THREE.BoxGeometry(badgeW + 0.04, badgeH + 0.03, 0.045), backplateMat);
-  sideBadgeBack.position.set(centerShiftX + 0.06, thickY * 0.08, depthZ - 0.01);
+  // Satin brushed side brand nameplate (+Z visible face)
+  const gpuTex = makeGpuNameplateTexture(comp);
+  const badgeW = Math.min(1.26, len * 0.50);
+  const badgeH = Math.max(0.20, dropY * 0.48);
+  const sideBadgeBack = new THREE.Mesh(makeExtrudedBox(badgeW + 0.035, badgeH + 0.022, 0.042, 0.01, 0.004), backplateMat);
+  sideBadgeBack.position.set(centerShiftX - 0.04, -dropY * 0.40, depthZ - 0.01);
   const sideBadge = new THREE.Mesh(
     new THREE.PlaneGeometry(badgeW, badgeH),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, map: gpuTex, roughness: 0.35 })
+    new THREE.MeshStandardMaterial({ color: 0xffffff, map: gpuTex, roughness: 0.34, metalness: 0.38 })
   );
-  sideBadge.position.set(centerShiftX + 0.06, thickY * 0.08, depthZ + 0.016);
+  sideBadge.position.set(centerShiftX - 0.04, -dropY * 0.40, depthZ + 0.014);
   group.add(sideBadgeBack, sideBadge);
 
-  // Axial Fans seated neatly inside the circular shroud bores!
+  // Axial Fans seated neatly inside the circular shroud bores
   for (const localFx of fanXCoords) {
-    const fan = _makeFanAssembly(fanSize, shroudMat, fanRotors, { depth: 0.14, showStruts: false });
+    const fan = _makeFanAssembly(fanSize, shroudMat, fanRotors, { depth: 0.14, showStruts: false, bladeCount: 9 });
     fan.rotation.x = Math.PI / 2;
-    fan.position.set(centerShiftX + localFx, -thickY * 0.38, depthZ * 0.5);
+    fan.position.set(centerShiftX + localFx, shroudY - 0.01, depthZ * 0.50);
     group.add(fan);
   }
 
-  // 6. Stainless Rear Dual-Slot I/O Bracket (-X) flush against case rear PCIe bay
-  const rearBracket = new THREE.Mesh(makeExtrudedBox(0.036, thickY * 1.18, depthZ + 0.08, 0.01, 0.004), steelMat);
-  rearBracket.position.set(centerShiftX - len / 2 + 0.01, -0.02, depthZ * 0.5);
+  // 6. Dual/Triple-Slot Brushed Stainless Rear I/O Bracket (-X) aligned to downward GPU slots
+  const rearBracket = new THREE.Mesh(makeExtrudedBox(0.034, dropY + 0.12, depthZ + 0.08, 0.01, 0.004), steelMat);
+  rearBracket.position.set(centerShiftX - len / 2 + 0.01, -dropY * 0.46, depthZ * 0.50);
   group.add(rearBracket);
 
-  const dpGeos = [];
+  const portShieldGeos = [];
+  const portCavityGeos = [];
   for (let p = 0; p < 4; p++) {
-    const dp = new THREE.BoxGeometry(0.048, 0.045, 0.12);
-    dp.translate(centerShiftX - len / 2 - 0.065, 0.06, depthZ * 0.24 + p * 0.19);
-    dpGeos.push(dp);
-  }
-  group.add(new THREE.Mesh(safeMerge(dpGeos), pcbMat));
+    const pz = depthZ * 0.24 + p * 0.19;
+    const shield = new THREE.BoxGeometry(0.052, 0.056, 0.135);
+    shield.translate(centerShiftX - len / 2 - 0.018, -0.075, pz);
+    portShieldGeos.push(shield);
 
-  // 7. Recessed 8-Pin / 12VHPWR Power Header on +Z Edge
-  const pwrPlug = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.12), pcbMat);
-  pwrPlug.position.set(centerShiftX + len * 0.36, thickY * 0.36, depthZ - 0.04);
-  group.add(pwrPlug);
+    const cavity = new THREE.BoxGeometry(0.024, 0.034, 0.108);
+    cavity.translate(centerShiftX - len / 2 - 0.038, -0.075, pz);
+    portCavityGeos.push(cavity);
+  }
+  // Exhaust slots below ports on dual/triple-slot bracket
+  for (let s = 0; s < 5; s++) {
+    const slot = new THREE.BoxGeometry(0.042, 0.055, 0.09);
+    slot.translate(centerShiftX - len / 2 + 0.01, -dropY * 0.66, depthZ * 0.22 + s * 0.14);
+    portCavityGeos.push(slot);
+  }
+  group.add(new THREE.Mesh(safeMerge(portShieldGeos), steelMat));
+  group.add(new THREE.Mesh(safeMerge(portCavityGeos), portDarkMat));
+
+  // 7. Recessed 8-Pin / 12VHPWR Power Header flush on +Z GPU PCB Edge (synced to CableRoutingSystem)
+  const pwrX = centerShiftX + len * 0.32;
+  const pwrPlug = new THREE.Mesh(makeExtrudedBox(0.23, 0.098, 0.115, 0.01, 0.004), portDarkMat);
+  pwrPlug.position.set(pwrX, 0.004, depthZ - 0.04);
+  const pwrLatch = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.04), shroudAccentMat);
+  pwrLatch.position.set(pwrX, 0.058, depthZ - 0.01);
+  const pinHoleGeos = [];
+  for (let c = -1.5; c <= 1.5; c += 1) {
+    for (const r of [-0.018, 0.018]) {
+      const pin = new THREE.BoxGeometry(0.024, 0.020, 0.012);
+      pin.translate(pwrX + c * 0.042, 0.004 + r, depthZ + 0.018);
+      pinHoleGeos.push(pin);
+    }
+  }
+  group.add(pwrPlug, pwrLatch, new THREE.Mesh(safeMerge(pinHoleGeos), steelMat));
 
   // 8. Rear Expansion Bracket Fastener Thumbscrew (MUST preserve userData.fastenerScrews)
   const gpuScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.055, 12), steelMat);
   gpuScrew.rotation.z = Math.PI / 2;
-  gpuScrew.position.set(centerShiftX - len / 2 - 0.074, 0.17, 0.04);
+  gpuScrew.position.set(centerShiftX - len / 2 - 0.074, 0.06, 0.04);
   gpuScrew.visible = false;
   group.add(gpuScrew);
 
@@ -2419,7 +3347,8 @@ export function createGpuModel(comp) {
 }
 
 // ---------------------------------------------------------------------------
-// 7. PSU (Chamfered Body, Recessed Fan & Toroid Coils, Wire Grille, AC Inlet & Rocker,
+// 7. PSU (Chamfered Powder-Coated Body, Authentic Wattage & DC Rail Nameplate,
+//    Recessed Fan with Internal Copper Coils, Wire Grille, C14 AC Inlet & Rocker,
 //    Modular Output Socket Bank, Fastener Screws)
 // ---------------------------------------------------------------------------
 
@@ -2436,103 +3365,133 @@ export function createPsuModel(comp) {
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: 0x161c26,
-    roughness: 0.50,
+    roughness: 0.48,
     metalness: 0.56,
     bumpMap: brushedBump,
-    bumpScale: 0.004,
+    bumpScale: 0.0035,
   });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.32, metalness: 0.84 });
-  const meshMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: makeHoneycombMeshTexture(), roughness: 0.7, metalness: 0.3 });
-  const plugMat = new THREE.MeshStandardMaterial({ color: 0x090d14, roughness: 0.72, metalness: 0.1 });
-  const brassMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.24, metalness: 0.9 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x2a3444, roughness: 0.32, metalness: 0.82 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.28, metalness: 0.88 });
+  const meshMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: makeHoneycombMeshTexture(), roughness: 0.72, metalness: 0.30 });
+  const plugMat = new THREE.MeshStandardMaterial({ color: 0x090d14, roughness: 0.74, metalness: 0.10 });
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.22, metalness: 0.92 });
+  const copperMat = new THREE.MeshStandardMaterial({ color: 0xb85d2e, roughness: 0.28, metalness: 0.88 });
 
-  // 1. Chamfered Powder-Coated Chassis
+  // 1. Chamfered Powder-Coated Chassis + Corner Stamped Trim Strips
   const chassis = new THREE.Mesh(makeExtrudedBox(lenX, hY, wZ, 0.03, 0.01), bodyMat);
   chassis.castShadow = true;
   chassis.receiveShadow = true;
   group.add(chassis);
 
-  // 2. Spec Nameplate Decal on +Z Visible Side Face
-  const effLabel = comp?.efficiency_rating || comp?.efficiency || '80+ Bronze';
-  const labelTex = makeLabelTexture(
-    `${comp?.wattage || 650}W`,
-    `${comp?.brand || 'Corsair'} · ${effLabel}`,
-    '#f59e0b',
-    '#0f172a'
-  );
+  // Subtle machined perimeter seam lines & chassis screws on top/side edges
+  const seamScrewGeos = [];
+  for (const [sx, sz] of [
+    [-lenX * 0.44, -wZ * 0.44], [lenX * 0.44, -wZ * 0.44],
+    [-lenX * 0.44, wZ * 0.44], [lenX * 0.44, wZ * 0.44],
+  ]) {
+    const sc = new THREE.CylinderGeometry(0.018, 0.018, 0.014, 8);
+    sc.translate(sx, hY / 2 + 0.004, sz);
+    seamScrewGeos.push(sc);
+  }
+  group.add(new THREE.Mesh(safeMerge(seamScrewGeos), metalMat));
+
+  // 2. Authentic Industrial Wattage & DC Rail Nameplate Decal on +Z Visible Side Face
+  const labelTex = makePsuLabelTexture(comp);
   const sideLabel = new THREE.Mesh(
-    new THREE.PlaneGeometry(lenX * 0.84, hY * 0.74),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, map: labelTex, roughness: 0.40 })
+    new THREE.PlaneGeometry(lenX * 0.86, hY * 0.78),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, map: labelTex, roughness: 0.42, metalness: 0.12 })
   );
-  sideLabel.position.set(0, 0, wZ / 2 + 0.006);
+  sideLabel.position.set(0, 0, wZ / 2 + 0.005);
   group.add(sideLabel);
 
-  // 3. Recessed 120mm Intake Fan on -Y Bottom Face + Concentric Wire Grille
-  const fan = _makeFanAssembly(1.08, bodyMat, fanRotors, { depth: 0.14, showStruts: false });
+  // 3. Recessed 120mm Intake Fan on -Y Bottom Face + Subtle Internal Toroid Coils + Wire Grille
+  const fan = _makeFanAssembly(1.08, bodyMat, fanRotors, { depth: 0.14, showStruts: false, bladeCount: 9 });
   fan.rotation.x = Math.PI / 2;
-  fan.position.set(0, -hY / 2 - 0.012, 0);
+  fan.position.set(0, -hY / 2 - 0.006, 0);
   group.add(fan);
 
+  // Internal copper PFC toroid & bulk capacitor silhouette visible subtly inside bore
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.045, 8, 16), copperMat);
+  coil.rotation.x = Math.PI / 2;
+  coil.position.set(0.24, -hY / 2 + 0.06, -0.18);
+  group.add(coil);
+
   const grilleGeos = [];
-  for (const r of [0.18, 0.32, 0.45, 0.56]) {
-    const t = new THREE.TorusGeometry(r, 0.012, 8, 28);
+  for (const r of [0.18, 0.31, 0.44, 0.56]) {
+    const t = new THREE.TorusGeometry(r, 0.010, 8, 30);
     t.rotateX(Math.PI / 2);
-    t.translate(0, -hY / 2 - 0.024, 0);
+    t.translate(0, -hY / 2 - 0.022, 0);
     grilleGeos.push(t);
   }
-  const crossA = new THREE.BoxGeometry(1.14, 0.016, 0.02);
-  crossA.translate(0, -hY / 2 - 0.024, 0);
-  const crossB = new THREE.BoxGeometry(0.02, 0.016, 1.14);
-  crossB.translate(0, -hY / 2 - 0.024, 0);
+  const crossA = new THREE.BoxGeometry(1.14, 0.014, 0.018);
+  crossA.translate(0, -hY / 2 - 0.022, 0);
+  const crossB = new THREE.BoxGeometry(0.018, 0.014, 1.14);
+  crossB.translate(0, -hY / 2 - 0.022, 0);
   grilleGeos.push(crossA, crossB);
+  for (const [gx, gz] of [[-0.44, -0.44], [0.44, -0.44], [-0.44, 0.44], [0.44, 0.44]]) {
+    const gs = new THREE.CylinderGeometry(0.022, 0.022, 0.016, 8);
+    gs.translate(gx, -hY / 2 - 0.020, gz);
+    grilleGeos.push(gs);
+  }
   group.add(new THREE.Mesh(safeMerge(grilleGeos), metalMat));
 
-  // 4. Rear Exhaust (-X): Honeycomb Exhaust Vent + IEC C14 AC Inlet (3 brass prongs) + Rocker Switch
-  const rearMesh = new THREE.Mesh(new THREE.BoxGeometry(0.02, hY * 0.78, wZ * 0.42), meshMat);
-  rearMesh.position.set(-lenX / 2 - 0.006, 0.04, 0.30);
+  // 4. Rear Exhaust (-X): Recessed Honeycomb Vent + Chamfered IEC C14 AC Inlet (3 brass prongs) + I/O Rocker
+  const rearMesh = new THREE.Mesh(new THREE.BoxGeometry(0.02, hY * 0.78, wZ * 0.44), meshMat);
+  rearMesh.position.set(-lenX / 2 - 0.005, 0.04, 0.28);
   group.add(rearMesh);
 
-  const acSocket = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.24, 0.30), plugMat);
-  acSocket.position.set(-lenX / 2 - 0.012, -0.14, -0.28);
-  group.add(acSocket);
+  const acBezel = new THREE.Mesh(makeExtrudedBox(0.042, 0.25, 0.32, 0.012, 0.004), trimMat);
+  acBezel.position.set(-lenX / 2 - 0.008, -0.14, -0.28);
+  const acCavity = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.19, 0.25), plugMat);
+  acCavity.position.set(-lenX / 2 - 0.016, -0.14, -0.28);
+  group.add(acBezel, acCavity);
+
   const prongGeos = [];
   for (const [py, pz] of [[-0.08, -0.28], [-0.18, -0.35], [-0.18, -0.21]]) {
-    const pr = new THREE.BoxGeometry(0.05, 0.032, 0.016);
+    const pr = new THREE.BoxGeometry(0.05, 0.030, 0.015);
     pr.translate(-lenX / 2 - 0.022, py, pz);
     prongGeos.push(pr);
   }
   group.add(new THREE.Mesh(safeMerge(prongGeos), brassMat));
 
+  const rockerBezel = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.18, 0.13), plugMat);
+  rockerBezel.position.set(-lenX / 2 - 0.008, -0.14, -0.02);
   const rocker = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 0.16, 0.11),
-    new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.3, roughness: 0.42 })
+    new THREE.BoxGeometry(0.052, 0.14, 0.095),
+    new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.42, metalness: 0.12 })
   );
-  rocker.position.set(-lenX / 2 - 0.014, -0.14, -0.02);
-  group.add(rocker);
+  rocker.rotation.z = 0.14;
+  rocker.position.set(-lenX / 2 - 0.018, -0.14, -0.02);
+  group.add(rockerBezel, rocker);
 
-  // 5. Front Modular Connector Output Bank (+X)
-  const modPanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, hY * 0.78, wZ * 0.82), metalMat);
-  modPanel.position.set(lenX / 2 + 0.008, 0, 0);
+  // 5. Front Modular Connector Output Bank (+X) with Molded Socket Housings & Pin Cavities
+  const modPanel = new THREE.Mesh(makeExtrudedBox(0.032, hY * 0.80, wZ * 0.84, 0.015, 0.004), trimMat);
+  modPanel.position.set(lenX / 2 + 0.006, 0, 0);
   group.add(modPanel);
 
   const modSocketGeos = [];
+  const modTrimGeos = [];
   for (const [my, mz, mh, mw] of [
     [0.16, -0.34, 0.16, 0.36],
     [-0.14, -0.36, 0.14, 0.26],
-    [0.16, 0.16, 0.14, 0.22],
+    [0.16, 0.15, 0.14, 0.22],
     [0.16, 0.42, 0.14, 0.22],
     [-0.14, 0.08, 0.12, 0.18],
     [-0.14, 0.34, 0.12, 0.18],
   ]) {
-    const ms = new THREE.BoxGeometry(0.045, mh, mw);
-    ms.translate(lenX / 2 + 0.028, my, mz);
+    const ms = new THREE.BoxGeometry(0.044, mh, mw);
+    ms.translate(lenX / 2 + 0.024, my, mz);
     modSocketGeos.push(ms);
+    const frame = new THREE.BoxGeometry(0.016, mh + 0.022, mw + 0.022);
+    frame.translate(lenX / 2 + 0.020, my, mz);
+    modTrimGeos.push(frame);
   }
+  group.add(new THREE.Mesh(safeMerge(modTrimGeos), metalMat));
   group.add(new THREE.Mesh(safeMerge(modSocketGeos), plugMat));
 
   // 6. Rear PSU Mounting Screws (MUST preserve userData.fastenerScrews)
   const psuScrews = [];
-  const psuScrewMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.24, metalness: 0.9 });
+  const psuScrewMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.22, metalness: 0.92 });
   const psuScrewGeo = new THREE.CylinderGeometry(0.032, 0.032, 0.048, 12);
   psuScrewGeo.rotateZ(Math.PI / 2);
   for (const [sy, sz] of [
@@ -2563,119 +3522,177 @@ export function createStorageModel(comp) {
   group.name = `Hardware_storage_${comp?.id || kind}`;
   const brushedBump = makeBrushedMetalBumpTexture();
 
-  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.65, metalness: 0.12 });
-  const greenPcbMat = new THREE.MeshStandardMaterial({ color: 0x0f5132, roughness: 0.58, metalness: 0.14 });
-  const icMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.3 });
+  const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0b121e, roughness: 0.62, metalness: 0.14 });
+  const greenPcbMat = new THREE.MeshStandardMaterial({ color: 0x0f5132, roughness: 0.54, metalness: 0.14 });
+  const icMat = new THREE.MeshStandardMaterial({ color: 0x1b222e, roughness: 0.44, metalness: 0.28 });
+  const plugBlackMat = new THREE.MeshStandardMaterial({ color: 0x0a0e16, roughness: 0.72, metalness: 0.10 });
   const goldMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: makeGoldFingersTexture(28, 0.22),
     roughness: 0.22,
-    metalness: 0.9,
+    metalness: 0.90,
   });
   const plainGold = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.22, metalness: 0.92 });
   const metalMat = new THREE.MeshStandardMaterial({
-    color: 0xb0bac9,
-    roughness: 0.30,
-    metalness: 0.84,
+    color: 0xb8c2d0,
+    roughness: 0.28,
+    metalness: 0.86,
     bumpMap: brushedBump,
-    bumpScale: 0.004,
+    bumpScale: 0.0035,
   });
 
   if (kind === 'm2_nvme') {
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.22, 0.022), pcbMat);
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.22, 0.020), pcbMat);
     group.add(pcb);
 
     // M-key notched gold edge fingers (-X)
-    const fingersTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.025), goldMat);
-    fingersTop.position.set(-0.39, 0.04, 0);
-    const fingersBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.025), plainGold);
-    fingersBot.position.set(-0.39, -0.075, 0);
+    const fingersTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.125, 0.023), goldMat);
+    fingersTop.position.set(-0.39, 0.038, 0);
+    const fingersBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.042, 0.023), plainGold);
+    fingersBot.position.set(-0.39, -0.074, 0);
     group.add(fingersTop, fingersBot);
 
-    // Exposed Controller IC (metallic shield), DRAM cache & 2x 3D NAND packages
-    const ctrl = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.12, 0.018), metalMat);
-    ctrl.position.set(-0.24, 0, 0.018);
+    // Exposed Nickel-Shielded Controller IC, DRAM cache, 2x 3D NAND packages & Perimeter Micro SMD Caps
+    const ctrl = new THREE.Mesh(makeExtrudedBox(0.115, 0.125, 0.018, 0.008, 0.002), metalMat);
+    ctrl.position.set(-0.24, 0, 0.017);
     const dram = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.10, 0.016), icMat);
     dram.position.set(-0.12, 0, 0.016);
-    const nand1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.016), icMat);
+    const nand1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.155, 0.016), icMat);
     nand1.position.set(0.04, 0, 0.016);
     const nand2 = nand1.clone();
     nand2.position.set(0.24, 0, 0.016);
     group.add(ctrl, dram, nand1, nand2);
 
-    // Sleek thermal copper/brand label overlay over NAND
-    const labelTex = makeLabelTexture(comp?.brand || 'NVMe', `${comp?.capacity_gb || 1000}GB M.2`, '#38bdf8', '#141e2e', false, 768, 256);
+    const smdGeos = [];
+    for (let s = 0; s < 8; s++) {
+      const sx = -0.32 + s * 0.088;
+      const c1 = new THREE.BoxGeometry(0.016, 0.010, 0.008);
+      c1.translate(sx, 0.092, 0.013);
+      const c2 = new THREE.BoxGeometry(0.016, 0.010, 0.008);
+      c2.translate(sx, -0.092, 0.013);
+      smdGeos.push(c1, c2);
+    }
+    group.add(new THREE.Mesh(safeMerge(smdGeos), plainGold));
+
+    // Authentic Copper-Graphene Thermal Film Sticker over NAND
+    const labelTex = makeSsdLabelTexture(comp, 'm2_nvme');
     const sticker = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.42, 0.175),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, map: labelTex, roughness: 0.4 })
+      new THREE.PlaneGeometry(0.45, 0.185),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, map: labelTex, roughness: 0.36, metalness: 0.25 })
     );
-    sticker.position.set(0.14, 0, 0.027);
+    sticker.position.set(0.14, 0, 0.0255);
     group.add(sticker);
 
-    // Half-moon standoff mounting notch (+X)
-    const notch = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.028, 12), metalMat);
-    notch.rotation.x = Math.PI / 2;
-    notch.position.set(0.39, 0, 0);
-    group.add(notch);
+    // Copper-plated half-moon standoff mounting ring (+X)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.008, 8, 16, Math.PI), plainGold);
+    ring.rotation.z = Math.PI / 2;
+    ring.position.set(0.395, 0, 0.010);
+    group.add(ring);
   } else if (kind === 'sata_35') {
-    // 3.5" SATA HDD: Cast aluminum base + brushed stainless stamped lid + spindle + logic PCB + L-SATA
-    const housing = new THREE.Mesh(makeExtrudedBox(1.02, 0.24, 1.46, 0.04, 0.01), pcbMat);
-    const topLid = new THREE.Mesh(makeExtrudedBox(0.95, 0.036, 1.38, 0.03, 0.006), metalMat);
-    topLid.position.y = 0.12;
-    const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.21, 0.045, 24), metalMat);
-    spindle.position.set(0, 0.145, -0.14);
-    const spindleHub = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.052, 18), icMat);
-    spindleHub.position.set(0, 0.15, -0.14);
+    // 3.5" SATA HDD: Ribbed cast aluminum chassis + brushed stamped stainless lid + spindle hub + spec sticker + underside PCB + molded L-SATA
+    const housing = new THREE.Mesh(makeExtrudedBox(1.02, 0.23, 1.46, 0.035, 0.01), icMat);
+    housing.castShadow = true;
+    const topLid = new THREE.Mesh(makeExtrudedBox(0.94, 0.034, 1.38, 0.028, 0.006), metalMat);
+    topLid.position.y = 0.118;
 
-    // Underside green logic board + controller chip
+    const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.215, 0.042, 26), metalMat);
+    spindle.position.set(0, 0.140, -0.22);
+    const spindleHub = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.048, 20), icMat);
+    spindleHub.position.set(0, 0.146, -0.22);
+
+    // Industrial HDD spec decal on front half of lid
+    const hddTex = makeSsdLabelTexture(comp, 'sata_35');
+    const hddLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.76, 0.86),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, map: hddTex, roughness: 0.42 })
+    );
+    hddLabel.rotation.x = -Math.PI / 2;
+    hddLabel.position.set(0, 0.138, 0.20);
+
+    // Underside green logic PCB + BGA controller IC
     const logicPcb = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.018, 0.68), greenPcbMat);
-    logicPcb.position.set(0, -0.125, -0.32);
+    logicPcb.position.set(0, -0.122, -0.32);
+    const logicIc = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.016, 0.22), plugBlackMat);
+    logicIc.position.set(-0.10, -0.135, -0.28);
 
-    // L-keyed SATA Power + Data connector blades (-Z rear)
-    const sataPwr = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.035, 0.08), plainGold);
-    sataPwr.position.set(-0.22, -0.05, -0.74);
-    const sataData = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.035, 0.08), plainGold);
-    sataData.position.set(0.04, -0.05, -0.74);
+    // Molded Black L-Keyed SATA 15-Pin Power + 7-Pin Data Housings with Gold Pins (-Z rear)
+    const sataHousing = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.056, 0.085), plugBlackMat);
+    sataHousing.position.set(-0.08, -0.055, -0.735);
+    const sataPwr = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.018, 0.075), plainGold);
+    sataPwr.position.set(-0.21, -0.052, -0.745);
+    const sataData = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.018, 0.075), plainGold);
+    sataData.position.set(0.04, -0.052, -0.745);
 
-    // 6 perimeter Torx lid screws
+    // 6 perimeter Torx lid screws + 6 spindle hub screws
     const torxGeos = [];
     for (const [sx, sz] of [[-0.41, -0.58], [0.41, -0.58], [-0.41, 0], [0.41, 0], [-0.41, 0.58], [0.41, 0.58]]) {
-      const ts = new THREE.CylinderGeometry(0.022, 0.022, 0.02, 8);
-      ts.translate(sx, 0.14, sz);
+      const ts = new THREE.CylinderGeometry(0.021, 0.021, 0.018, 6);
+      ts.translate(sx, 0.138, sz);
       torxGeos.push(ts);
     }
-    group.add(housing, topLid, spindle, spindleHub, logicPcb, sataPwr, sataData, new THREE.Mesh(safeMerge(torxGeos), icMat));
-  } else {
-    // 2.5" SATA SSD: Chamfered anodized shell + nameplate + L-keyed SATA blades
-    const shell = new THREE.Mesh(
-      makeExtrudedBox(0.70, 0.08, 1.00, 0.03, 0.008),
-      new THREE.MeshStandardMaterial({
-        color: 0x1e293b,
-        roughness: 0.36,
-        metalness: 0.68,
-        bumpMap: brushedBump,
-        bumpScale: 0.004,
-      })
+    for (let h = 0; h < 6; h++) {
+      const a = (h / 6) * Math.PI * 2;
+      const hs = new THREE.CylinderGeometry(0.014, 0.014, 0.016, 6);
+      hs.translate(Math.cos(a) * 0.135, 0.162, -0.22 + Math.sin(a) * 0.135);
+      torxGeos.push(hs);
+    }
+    group.add(
+      housing, topLid, spindle, spindleHub, hddLabel,
+      logicPcb, logicIc, sataHousing, sataPwr, sataData,
+      new THREE.Mesh(safeMerge(torxGeos), metalMat)
     );
-    const tex = makeLabelTexture(comp?.brand || 'SSD', `${comp?.capacity_gb || 500}GB SATA`, '#10b981', '#0f172a');
+  } else {
+    // 2.5" SATA SSD: Chamfered brushed anodized clamshell + industrial graphic + molded L-SATA ports + side mounting holes
+    const shellMat = new THREE.MeshStandardMaterial({
+      color: 0x1b2330,
+      roughness: 0.34,
+      metalness: 0.74,
+      bumpMap: brushedBump,
+      bumpScale: 0.0035,
+    });
+    const shell = new THREE.Mesh(makeExtrudedBox(0.70, 0.076, 1.00, 0.032, 0.008), shellMat);
+    shell.castShadow = true;
+
+    // Subtle anodized seam chamfer ring around perimeter (extruded shell outer X = ±0.358, Y = ±0.046)
+    const seamLine = new THREE.Mesh(new THREE.BoxGeometry(0.720, 0.008, 1.004), metalMat);
+    seamLine.position.y = -0.004;
+
+    // Clean industrial SSD graphic decal sitting crisply above beveled shell top (y = 0.046)
+    const tex = makeSsdLabelTexture(comp, 'sata_25');
     const sticker = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.58, 0.80),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex, roughness: 0.38 })
+      new THREE.PlaneGeometry(0.62, 0.88),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex, roughness: 0.36, metalness: 0.16 })
     );
     sticker.rotation.x = -Math.PI / 2;
-    sticker.position.y = 0.050;
-    const sataPwr = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.07), plainGold);
-    sataPwr.position.set(-0.18, -0.01, -0.50);
-    const sataData = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.07), plainGold);
-    sataData.position.set(0.04, -0.01, -0.50);
-    group.add(shell, sticker, sataPwr, sataData);
+    sticker.position.y = 0.0475;
+
+    // 4 subtle recessed M3 mounting holes flush on left & right shell sides
+    const mountGeos = [];
+    for (const mx of [-0.360, 0.360]) {
+      for (const mz of [-0.32, 0.32]) {
+        const mh = new THREE.CylinderGeometry(0.016, 0.016, 0.010, 10);
+        mh.rotateZ(Math.PI / 2);
+        mh.translate(mx, 0, mz);
+        mountGeos.push(mh);
+      }
+    }
+
+    // Molded Black L-Keyed SATA 15-Pin Power + 7-Pin Data Housings with Gold Pins (-Z rear)
+    const sataHousing = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.048, 0.072), plugBlackMat);
+    sataHousing.position.set(-0.07, -0.012, -0.495);
+    const sataPwr = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.015, 0.068), plainGold);
+    sataPwr.position.set(-0.17, -0.010, -0.504);
+    const sataData = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.015, 0.068), plainGold);
+    sataData.position.set(0.045, -0.010, -0.504);
+
+    group.add(shell, seamLine, sticker, new THREE.Mesh(safeMerge(mountGeos), plugBlackMat), sataHousing, sataPwr, sataData);
   }
 
   return group;
 }
 
 // ---------------------------------------------------------------------------
-// 9. Case Fan (Octagonal Frame, Stator Struts, Swept Blades, Airflow Guide)
+// 9. Case Fan (Octagonal Frame, Swept Scimitar Blades, Embossed Rim Airflow Badge)
 // ---------------------------------------------------------------------------
 
 export function createCaseFanModel(comp) {
@@ -2684,26 +3701,41 @@ export function createCaseFanModel(comp) {
   group.name = `Hardware_case_fan_${comp?.id || 'fan'}`;
   const fanRotors = [];
 
-  const frameMat = new THREE.MeshStandardMaterial({ color: 0x1b2330, roughness: 0.55, metalness: 0.32 });
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x1b2330, roughness: 0.52, metalness: 0.34 });
   const fan = _makeFanAssembly(sz, frameMat, fanRotors, {
     depth: 0.25,
     accentColor: 0x38bdf8,
     showStruts: true,
+    bladeCount: 9,
   });
   group.add(fan);
 
-  // Airflow direction indicator arrow bar on top edge (local -Z exhaust direction)
-  const arrowMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    emissive: 0x0ea5e9,
-    emissiveIntensity: 0.45,
-  });
-  const arrowShaft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.045, 0.18), arrowMat);
-  arrowShaft.position.set(0, sz / 2 + 0.03, 0);
-  const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.11, 8), arrowMat);
-  arrowHead.rotation.x = -Math.PI / 2;
-  arrowHead.position.set(0, sz / 2 + 0.03, -0.11);
-  group.add(arrowShaft, arrowHead);
+  // Flush industrial airflow direction plate molded onto top rim (arrow points toward local -Z exhaust)
+  const airflowPlate = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.21, 0.056),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: makeFanAirflowLabelTexture(),
+      roughness: 0.40,
+      metalness: 0.20,
+    })
+  );
+  airflowPlate.rotation.x = -Math.PI / 2;
+  airflowPlate.rotation.z = Math.PI / 2; // Canvas +X arrow aligns with local -Z exhaust!
+  airflowPlate.position.set(0, sz * 0.5 + 0.0085, 0);
+  group.add(airflowPlate);
+
+  // Subtle 4-pin PWM black braided pigtail stub exiting lower-right corner
+  const wireCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(sz * 0.42, -sz * 0.42, -0.06),
+    new THREE.Vector3(sz * 0.50, -sz * 0.46, -0.10),
+    new THREE.Vector3(sz * 0.54, -sz * 0.34, -0.12),
+  ]);
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0x0d121a, roughness: 0.78, metalness: 0.08 });
+  const pigtail = new THREE.Mesh(new THREE.TubeGeometry(wireCurve, 8, 0.014, 6, false), wireMat);
+  const pwmPlug = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.036, 0.068), wireMat);
+  pwmPlug.position.set(sz * 0.54, -sz * 0.31, -0.12);
+  group.add(pigtail, pwmPlug);
 
   group.userData.fanRotors = fanRotors;
   return group;
@@ -2735,70 +3767,186 @@ export function createComponentMesh(slotKey, comp) {
 }
 
 // ---------------------------------------------------------------------------
-// 10. Braided Cables with Cable Combs & Oriented Multi-Pin Plugs
+// 10. Multi-Strand Sleeved Braided Cables with Machined Combs & Latched Plugs
 // ---------------------------------------------------------------------------
 
-export function createCableMesh(cableDef, startPt, endPt) {
+export function createCableMesh(cableDef, startPt, endPt, waypoints = null) {
   const group = new THREE.Group();
   group.name = `Cable_${cableDef.id}`;
 
   const s = new THREE.Vector3(startPt.x, startPt.y, startPt.z);
   const e = new THREE.Vector3(endPt.x, endPt.y, endPt.z);
 
-  const mid1 = s.clone().lerp(e, 0.30);
-  mid1.z -= 0.20;
-  mid1.y += 0.14;
-  const mid2 = s.clone().lerp(e, 0.70);
-  mid2.z += 0.20;
-  mid2.y -= 0.06;
+  let controlPts;
+  if (Array.isArray(waypoints) && waypoints.length >= 2) {
+    controlPts = waypoints.map((p) => new THREE.Vector3(p.x, p.y, p.z));
+  } else {
+    const mid1 = s.clone().lerp(e, 0.28);
+    mid1.z -= 0.16;
+    mid1.y += 0.12;
+    const mid2 = s.clone().lerp(e, 0.72);
+    mid2.z += 0.16;
+    mid2.y -= 0.05;
+    controlPts = [s, mid1, mid2, e];
+  }
 
-  const curve = new THREE.CatmullRomCurve3([s, mid1, mid2, e]);
+  // Centripetal spline prevents overshoot/bulging around crisp 90° cable-management bends
+  const baseCurve = new THREE.CatmullRomCurve3(controlPts, false, 'centripetal', 0.35);
   const braidTex = makeBraidedSleeveTexture();
-  const tubeMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(cableDef.color || '#3ecf5e'),
-    roughness: 0.65,
-    metalness: 0.12,
-    bumpMap: braidTex,
-    bumpScale: 0.008,
-  });
 
   const is24Pin = cableDef.id === 'c_24pin';
   const isPowerHeavy = is24Pin || cableDef.id === 'c_8pin_cpu' || cableDef.id === 'c_pcie_8';
-  const radius = is24Pin ? 0.044 : cableDef.id.includes('fan') ? 0.022 : 0.032;
+  const isFan = cableDef.id.includes('fan');
+  const isSataData = cableDef.id === 'c_sata_data';
 
-  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 26, radius, 10, false), tubeMat);
-  tube.castShadow = true;
-  group.add(tube);
+  // Authentic dark carbon-braided sleeving
+  const sleeveMat = new THREE.MeshStandardMaterial({
+    color: isSataData ? 0x162231 : 0x1a202c,
+    roughness: 0.72,
+    metalness: 0.14,
+    bumpMap: braidTex,
+    bumpScale: 0.010,
+  });
+  // Color-coded anodized heatshrink collars so each rail stays identifiable at connector ends
+  const accentColor = new THREE.Color(cableDef.color || '#3ecf5e');
+  const collarMat = new THREE.MeshStandardMaterial({
+    color: accentColor,
+    roughness: 0.42,
+    metalness: 0.25,
+  });
+  const combMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.34,
+    metalness: 0.68,
+  });
+  const plugMat = new THREE.MeshStandardMaterial({
+    color: 0x0b1018,
+    roughness: 0.62,
+    metalness: 0.16,
+  });
 
-  // Sleek Cable Combs along main power harnesses
-  const plugMat = new THREE.MeshStandardMaterial({ color: 0x0b111c, roughness: 0.65, metalness: 0.15 });
+  // Build parallel multi-strand braided harness with stable ribbon spread (zero pinch/twist)
+  const strandCount = is24Pin ? 6 : isPowerHeavy ? 3 : isFan ? 1 : 2;
+  const strandRadius = is24Pin ? 0.0135 : isPowerHeavy ? 0.0135 : isFan ? 0.0115 : 0.0135;
+  const strandSpacing = is24Pin ? strandRadius * 2.55 : strandRadius * 2.10;
+  const tubularSegs = Math.min(72, Math.max(28, controlPts.length * 9));
+
+  const strandGeos = [];
+  const sampleCount = Math.max(20, controlPts.length * 4);
+  const prevSide = is24Pin ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
+
+  // Precompute smooth parallel-transport-like side frame along curve so multi-strand ribbons stay flat
+  const framePts = [];
+  const frameSides = [];
+  for (let k = 0; k <= sampleCount; k++) {
+    const t = k / sampleCount;
+    const pt = baseCurve.getPointAt(t);
+    const tan = baseCurve.getTangentAt(t).normalize();
+    let side;
+    if (is24Pin && t > 0.52) {
+      // Spread 24-pin ribbon vertically along Y as it emerges through the grommet into the vertical ATX header
+      side = new THREE.Vector3(0, 1, 0).addScaledVector(tan, -tan.y);
+      if (side.lengthSq() < 0.04) side = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0, 0, 1));
+    } else {
+      side = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0, 1, 0));
+      if (side.lengthSq() < 0.04) {
+        side = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0, 0, 1));
+      }
+    }
+    if (side.lengthSq() < 0.01) side.set(1, 0, 0);
+    side.normalize();
+    if (k > 0 && side.dot(prevSide) < 0) side.negate();
+    prevSide.copy(side);
+    framePts.push(pt);
+    frameSides.push(side);
+  }
+
+  for (let i = 0; i < strandCount; i++) {
+    const offsetAmt = (i - (strandCount - 1) * 0.5) * strandSpacing;
+    if (Math.abs(offsetAmt) < 0.001) {
+      strandGeos.push(new THREE.TubeGeometry(baseCurve, tubularSegs, strandRadius, 7, false));
+    } else {
+      const pts = [];
+      for (let k = 0; k <= sampleCount; k++) {
+        const t = k / sampleCount;
+        // Keep 24-pin flat across the tall header; gather smaller harnesses subtly into plugs
+        const taper = is24Pin && t > 0.7 ? 0.92 : Math.min(1, Math.sin(t * Math.PI) * 2.4);
+        pts.push(framePts[k].clone().addScaledVector(frameSides[k], offsetAmt * (0.46 + 0.54 * taper)));
+      }
+      const strandCurve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.35);
+      strandGeos.push(new THREE.TubeGeometry(strandCurve, tubularSegs, strandRadius, 7, false));
+    }
+  }
+  const harnessMesh = new THREE.Mesh(safeMerge(strandGeos), sleeveMat);
+  harnessMesh.castShadow = true;
+  group.add(harnessMesh);
+
+  // Machined Cable Combs placed cleanly on visible front-chamber segments (never clipping behind tray!)
   if (isPowerHeavy) {
-    for (const t of [0.35, 0.65]) {
-      const pt = curve.getPointAt(t);
-      const tan = curve.getTangentAt(t);
-      const comb = new THREE.Mesh(
-        new THREE.BoxGeometry(radius * 2.8, radius * 2.8, 0.045),
-        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.4 })
-      );
+    const combW = strandCount * strandSpacing + 0.022;
+    const combH = strandRadius * 2.5 + 0.012;
+    const combGeo = makeExtrudedBox(combW, combH, 0.032, 0.005, 0.0025);
+    const combSamples = cableDef.id === 'c_pcie_8' ? [0.62, 0.78, 0.90] : is24Pin ? [0.80, 0.91] : [0.82, 0.91];
+    for (const t of combSamples) {
+      const pt = baseCurve.getPointAt(t);
+      if (pt.z < -0.72) continue; // Keep combs out of rear tray & grommets
+      const tan = baseCurve.getTangentAt(t).normalize();
+      const idx = Math.min(sampleCount, Math.round(t * sampleCount));
+      const xAxis = frameSides[idx].clone().normalize();
+      const yAxis = new THREE.Vector3().crossVectors(tan, xAxis).normalize();
+      const orthoX = new THREE.Vector3().crossVectors(yAxis, tan).normalize();
+      const basis = new THREE.Matrix4().makeBasis(orthoX, yAxis, tan);
+      const comb = new THREE.Mesh(combGeo, combMat);
       comb.position.copy(pt);
-      comb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tan);
+      comb.quaternion.setFromRotationMatrix(basis);
       group.add(comb);
     }
   }
 
-  // Oriented molded multi-pin connector plugs at endpoints
-  const plugSize = is24Pin ? [0.11, 0.18, 0.12] : isPowerHeavy ? [0.11, 0.12, 0.11] : [0.08, 0.08, 0.09];
-  const plugGeo = new THREE.BoxGeometry(...plugSize);
+  // Oriented Molded Multi-Pin Connector Plugs + Retention Latch + Color-Coded Heatshrink Collar at Endpoints
+  const buildPlug = (pos, tangent, sideHint, w, h, l, collarOffsetSign) => {
+    const plugGrp = new THREE.Group();
+    const housing = new THREE.Mesh(makeExtrudedBox(w, h, l, 0.007, 0.0025), plugMat);
+    const latch = new THREE.Mesh(new THREE.BoxGeometry(w * 0.42, 0.015, l * 0.70), combMat);
+    latch.position.set(0, h * 0.52, 0);
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(w * 0.86, h * 0.74, 0.024), collarMat);
+    collar.position.set(0, 0, collarOffsetSign * (l * 0.56));
+    plugGrp.add(housing, latch, collar);
+    plugGrp.position.copy(pos);
+    const zAxis = tangent.clone().normalize();
+    const xAxis = sideHint.clone().addScaledVector(zAxis, -sideHint.dot(zAxis));
+    if (xAxis.lengthSq() < 0.01) {
+      plugGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), zAxis);
+    } else {
+      xAxis.normalize();
+      const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      plugGrp.quaternion.setFromRotationMatrix(basis);
+    }
+    return plugGrp;
+  };
 
-  const p1 = new THREE.Mesh(plugGeo, plugMat);
-  p1.position.copy(s);
-  p1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(0.02));
+  const startW = is24Pin ? 0.24 : isPowerHeavy ? 0.12 : 0.072;
+  const startH = is24Pin ? 0.095 : isPowerHeavy ? 0.075 : 0.048;
+  const startL = is24Pin ? 0.10 : isPowerHeavy ? 0.095 : 0.076;
 
-  const p2 = new THREE.Mesh(plugGeo, plugMat);
-  p2.position.copy(e);
-  p2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(0.98));
+  const endW = is24Pin ? 0.40 : isPowerHeavy ? 0.12 : 0.072;
+  const endH = is24Pin ? 0.088 : isPowerHeavy ? 0.075 : 0.048;
+  const endL = is24Pin ? 0.105 : isPowerHeavy ? 0.095 : 0.076;
 
-  group.add(p1, p2);
+  group.add(buildPlug(controlPts[0], baseCurve.getTangentAt(0.015), frameSides[0], startW, startH, startL, 1));
+  group.add(
+    buildPlug(
+      controlPts[controlPts.length - 1],
+      baseCurve.getTangentAt(0.985),
+      is24Pin ? new THREE.Vector3(0, 1, 0) : frameSides[sampleCount],
+      endW,
+      endH,
+      endL,
+      -1
+    )
+  );
+
   return group;
 }
 

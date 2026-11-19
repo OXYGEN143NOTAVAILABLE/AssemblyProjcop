@@ -15,6 +15,12 @@ import {
   MB_LOCAL_SOCKETS,
   rotatePointX,
 } from './PlacementSnappingSystem.mjs';
+import {
+  computePortWorldCoords,
+  computeCableWaypoints,
+  getPsuWorldCenter,
+  getStorageMountY,
+} from './CableRoutingSystem.mjs';
 import { createComponentMesh, createCableMesh, tryAttachExternalGltf } from './ProceduralHardwareFactory.mjs';
 
 export class ComponentManager {
@@ -175,13 +181,21 @@ export class ComponentManager {
 
     if (slotKey === 'storage') {
       const sKind = detectStorageKind(entry.component);
-      if (entry.mountLocation === 'case_drive_bay' && sKind === 'sata_25') {
-        g.position.y = entry.position.y - 0.07;
+      if (entry.mountLocation === 'case_drive_bay') {
+        g.position.y = getStorageMountY(entry.component);
       } else if (entry.mountLocation === 'staging' && sKind === 'sata_35') {
         g.position.y = Math.max(0.14, entry.position.y);
       } else if (entry.mountLocation === 'staging' && sKind === 'm2_nvme') {
         g.position.y = Math.max(0.03, entry.position.y);
       }
+    } else if (slotKey === 'psu' && entry.mountLocation === 'case_psu_bay') {
+      // Align rear AC faceplate flush with rear case cutout regardless of 140mm vs 160mm PSU depth
+      const psuPos = getPsuWorldCenter(entry.component, this.asm.slots.case?.component);
+      g.position.x = psuPos.x;
+    } else if (slotKey === 'gpu' && entry.mountLocation === 'staging') {
+      // Rest downward-hanging GPU fan shroud flush on ESD mat surface (Y = 0)
+      const thickY = (entry.component?.dimensionsMm?.d || 42) * SIM_SCALE_MM_TO_UNITS;
+      g.position.y = Math.max(0.34, thickY - 0.025);
     }
 
     // Base orientation matches mount location (bench prep pad vs vertical case standoffs vs staging)
@@ -252,46 +266,20 @@ export class ComponentManager {
     }
   }
 
-  _getPortWorldCoords() {
-    const mbOrigin = this.asm.mbMountLocation === 'case' ? CASE_MB_ANCHOR : BENCH_PREP_ORIGIN;
-    const gpuDims = this.asm.slots.gpu?.component?.dimensionsMm || { w: 268, h: 118, d: 42 };
-    const gpuLen = gpuDims.w * SIM_SCALE_MM_TO_UNITS;
-    const gpuDepthZ = gpuDims.h * SIM_SCALE_MM_TO_UNITS;
-    const gpuThickY = gpuDims.d * SIM_SCALE_MM_TO_UNITS;
-    const gpuShiftX = (gpuLen - 2.0) * 0.5;
-    const gpuAnchorX = mbOrigin.x + MB_LOCAL_SOCKETS.gpu.x;
-    const gpuAnchorY = mbOrigin.y + MB_LOCAL_SOCKETS.gpu.y;
-    const gpuAnchorZ = mbOrigin.z + MB_LOCAL_SOCKETS.gpu.z;
-
+  _getRoutingContext() {
     return {
-      psu_main: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y + 0.16, z: -0.34 },
-      psu_eps:  { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y + 0.16, z: 0.28 },
-      psu_pcie: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y - 0.14, z: 0.22 },
-      psu_sata: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y - 0.14, z: -0.34 },
-      mb_24pin: { x: mbOrigin.x + 1.15, y: mbOrigin.y + 0.45, z: mbOrigin.z + 0.11 },
-      mb_eps: { x: mbOrigin.x - 0.625, y: mbOrigin.y + 1.45, z: mbOrigin.z + 0.11 },
-      mb_cpufan: { x: mbOrigin.x + 0.68, y: mbOrigin.y + 1.41, z: mbOrigin.z + 0.09 },
-      mb_sata: { x: mbOrigin.x + 1.14, y: mbOrigin.y - 0.52, z: mbOrigin.z + 0.08 },
-      mb_sysfan: { x: mbOrigin.x + 1.14, y: mbOrigin.y + 0.90, z: mbOrigin.z + 0.09 },
-      mb_jfp1: { x: mbOrigin.x + 0.76, y: mbOrigin.y - 1.47, z: mbOrigin.z + 0.09 },
-      cooler_lead: { x: mbOrigin.x + 0.52, y: mbOrigin.y + 0.88, z: mbOrigin.z + 0.52 },
-      gpu_pwr: {
-        x: gpuAnchorX + gpuShiftX + gpuLen * 0.36,
-        y: gpuAnchorY + gpuThickY * 0.36,
-        z: gpuAnchorZ + gpuDepthZ - 0.02,
-      },
-      sata_drive: {
-        x: CASE_SUB_ANCHORS.sata_bay.x - 0.12,
-        y: CASE_SUB_ANCHORS.sata_bay.y,
-        z: CASE_SUB_ANCHORS.sata_bay.z - 0.56,
-      },
-      fan_lead: {
-        x: CASE_SUB_ANCHORS.case_fan.x + 0.08,
-        y: CASE_SUB_ANCHORS.case_fan.y - 0.52,
-        z: CASE_SUB_ANCHORS.case_fan.z,
-      },
-      case_fp: { x: CASE_ORIGIN.x + 0.45, y: 1.55, z: -0.70 },
+      mbMountLocation: this.asm.mbMountLocation || 'case',
+      mbComp: this.asm.slots.mb?.component || null,
+      coolerComp: this.asm.slots.cooler?.component || null,
+      gpuComp: this.asm.slots.gpu?.component || null,
+      psuComp: this.asm.slots.psu?.component || null,
+      storageComp: this.asm.slots.storage?.component || null,
+      caseComp: this.asm.slots.case?.component || null,
     };
+  }
+
+  _getPortWorldCoords() {
+    return computePortWorldCoords(this._getRoutingContext());
   }
 
   syncFasteners() {
@@ -396,7 +384,9 @@ export class ComponentManager {
             : 0x38bdf8;
 
       const holder = new THREE.Group();
-      holder.position.set(pt.x, pt.y, pt.z + 0.08);
+      const offsetX = portKey.startsWith('psu_') ? 0.08 : 0;
+      const offsetZ = portKey.startsWith('psu_') ? 0 : portKey === 'sata_drive' ? -0.08 : 0.08;
+      holder.position.set(pt.x + offsetX, pt.y, pt.z + offsetZ);
 
       const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(isSelected || isValidMatch ? 0.095 : 0.072, 12, 10),
@@ -425,14 +415,13 @@ export class ComponentManager {
     }
 
     if (this.asm.mbMountLocation !== 'case') return;
-    const portWorldCoords = this._getPortWorldCoords();
+    const routingCtx = this._getRoutingContext();
 
     for (const def of CABLE_DEFINITIONS) {
       if (!this.asm.cables[def.id]?.connected) continue;
-      const startPt = portWorldCoords[def.fromPortKey];
-      const endPt = portWorldCoords[def.toPortKey];
-      if (!startPt || !endPt) continue;
-      this.cablesGroup.add(createCableMesh(def, startPt, endPt));
+      const waypoints = computeCableWaypoints(def, routingCtx);
+      if (!waypoints || waypoints.length < 2) continue;
+      this.cablesGroup.add(createCableMesh(def, waypoints[0], waypoints[waypoints.length - 1], waypoints));
     }
   }
 

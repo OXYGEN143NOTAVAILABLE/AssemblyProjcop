@@ -20,13 +20,13 @@ export const CASE_MB_ANCHOR = Object.freeze({
 // Workbench staging tray positions (spacious ESD mat slots on expanded tray X: 3.35..7.85, zero float/overlap)
 export const STAGING_ANCHORS = Object.freeze({
   mb:       { x: 1.55, y: 0.04, z: 0.0 },
-  cpu:      { x: 3.95, y: 0.03, z: 1.75 },
-  cooler:   { x: 7.05, y: 0.02, z: 1.70 },
-  ram:      { x: 4.85, y: 0.02, z: 1.80 },
-  gpu:      { x: 5.15, y: 0.21, z: -0.25 },
-  storage:  { x: 5.95, y: 0.05, z: 1.85 },
-  psu:      { x: 4.35, y: 0.46, z: -2.05 },
-  case_fan: { x: 6.35, y: 0.61, z: -2.05 },
+  cpu:      { x: 3.95, y: 0.03, z: 1.95 },
+  cooler:   { x: 7.05, y: 0.02, z: 1.90 },
+  ram:      { x: 4.85, y: 0.02, z: 1.95 },
+  gpu:      { x: 5.15, y: 0.21, z: -0.45 },
+  storage:  { x: 5.95, y: 0.05, z: 1.95 },
+  psu:      { x: 4.35, y: 0.46, z: -2.15 },
+  case_fan: { x: 6.35, y: 0.61, z: -2.15 },
 });
 
 // Motherboard-local offsets relative to motherboard center (exact pc-anatomy ATX spec: 1 unit = 100mm)
@@ -41,8 +41,8 @@ export const MB_LOCAL_SOCKETS = Object.freeze({
 // Case-local anchors relative to CASE_ORIGIN
 export const CASE_SUB_ANCHORS = Object.freeze({
   psu:      { x: CASE_ORIGIN.x - 1.59, y: 0.56, z: 0.0 },
-  sata_bay: { x: CASE_ORIGIN.x + 1.42, y: 0.50, z: 0.05 },
-  case_fan: { x: CASE_ORIGIN.x - 2.18, y: 3.62, z: 0.24 },
+  sata_bay: { x: CASE_ORIGIN.x + 1.42, y: 0.515, z: 0.05 },
+  case_fan: { x: CASE_ORIGIN.x - 2.11, y: 3.62, z: 0.30 },
 });
 
 // Radii in Three.js units (1 unit = 100mm) — avoids snapping from arbitrary far distance
