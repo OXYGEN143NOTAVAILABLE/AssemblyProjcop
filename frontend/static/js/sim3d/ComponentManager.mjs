@@ -5,13 +5,14 @@
  */
 
 import * as THREE from 'three';
-import { CABLE_DEFINITIONS, detectStorageKind } from './SimulationDataManager.mjs';
+import { CABLE_DEFINITIONS, SIM_SCALE_MM_TO_UNITS, detectStorageKind } from './SimulationDataManager.mjs';
 import { COMPONENT_STATE } from './AssemblyManager.mjs';
 import {
   CASE_ORIGIN,
   CASE_MB_ANCHOR,
   CASE_SUB_ANCHORS,
   BENCH_PREP_ORIGIN,
+  MB_LOCAL_SOCKETS,
   rotatePointX,
 } from './PlacementSnappingSystem.mjs';
 import { createComponentMesh, createCableMesh, tryAttachExternalGltf } from './ProceduralHardwareFactory.mjs';
@@ -53,6 +54,9 @@ export class ComponentManager {
     this.snapGuide = this._createSnapGuide();
     this.snapGuide.visible = false;
     this.sceneMgr.scene.add(this.snapGuide);
+
+    // Live translucent/solid preview mesh when dragging a component from sidebar
+    this.dragGhost = null;
 
     // Highlight state tracking
     this.selectedSlot = null;
@@ -169,6 +173,17 @@ export class ComponentManager {
 
     g.position.set(entry.position.x, entry.position.y, entry.position.z);
 
+    if (slotKey === 'storage') {
+      const sKind = detectStorageKind(entry.component);
+      if (entry.mountLocation === 'case_drive_bay' && sKind === 'sata_25') {
+        g.position.y = entry.position.y - 0.07;
+      } else if (entry.mountLocation === 'staging' && sKind === 'sata_35') {
+        g.position.y = Math.max(0.14, entry.position.y);
+      } else if (entry.mountLocation === 'staging' && sKind === 'm2_nvme') {
+        g.position.y = Math.max(0.03, entry.position.y);
+      }
+    }
+
     // Base orientation matches mount location (bench prep pad vs vertical case standoffs vs staging)
     const baseEuler = new THREE.Euler(0, 0, 0, 'XYZ');
     if (slotKey === 'mb' && (entry.mountLocation === 'bench' || entry.mountLocation === 'staging')) {
@@ -239,22 +254,43 @@ export class ComponentManager {
 
   _getPortWorldCoords() {
     const mbOrigin = this.asm.mbMountLocation === 'case' ? CASE_MB_ANCHOR : BENCH_PREP_ORIGIN;
+    const gpuDims = this.asm.slots.gpu?.component?.dimensionsMm || { w: 268, h: 118, d: 42 };
+    const gpuLen = gpuDims.w * SIM_SCALE_MM_TO_UNITS;
+    const gpuDepthZ = gpuDims.h * SIM_SCALE_MM_TO_UNITS;
+    const gpuThickY = gpuDims.d * SIM_SCALE_MM_TO_UNITS;
+    const gpuShiftX = (gpuLen - 2.0) * 0.5;
+    const gpuAnchorX = mbOrigin.x + MB_LOCAL_SOCKETS.gpu.x;
+    const gpuAnchorY = mbOrigin.y + MB_LOCAL_SOCKETS.gpu.y;
+    const gpuAnchorZ = mbOrigin.z + MB_LOCAL_SOCKETS.gpu.z;
+
     return {
-      psu_main: { x: CASE_ORIGIN.x - 0.12, y: 1.15, z: -0.58 },
-      psu_eps: { x: CASE_ORIGIN.x - 2.35, y: 1.15, z: -0.74 },
-      psu_pcie: { x: CASE_ORIGIN.x - 0.72, y: 1.15, z: 0.12 },
-      psu_sata: { x: CASE_ORIGIN.x + 0.55, y: 0.45, z: -0.15 },
-      mb_24pin: { x: mbOrigin.x + 1.08, y: mbOrigin.y + 0.32, z: mbOrigin.z + 0.12 },
-      mb_eps: { x: mbOrigin.x - 0.86, y: mbOrigin.y + 1.38, z: mbOrigin.z + 0.12 },
-      mb_cpufan: { x: mbOrigin.x + 0.10, y: mbOrigin.y + 1.25, z: mbOrigin.z + 0.12 },
-      mb_sata: { x: mbOrigin.x + 1.08, y: mbOrigin.y - 0.92, z: mbOrigin.z + 0.10 },
-      mb_sysfan: { x: mbOrigin.x - 0.96, y: mbOrigin.y + 0.12, z: mbOrigin.z + 0.10 },
-      mb_jfp1: { x: mbOrigin.x + 0.95, y: mbOrigin.y - 1.38, z: mbOrigin.z + 0.10 },
-      cooler_lead: { x: mbOrigin.x + 0.28, y: mbOrigin.y + 0.72, z: mbOrigin.z + 0.46 },
-      gpu_pwr: { x: mbOrigin.x + 0.68, y: mbOrigin.y - 0.24, z: mbOrigin.z + 0.88 },
-      sata_drive: { x: CASE_SUB_ANCHORS.sata_bay.x - 0.25, y: CASE_SUB_ANCHORS.sata_bay.y, z: CASE_SUB_ANCHORS.sata_bay.z },
-      fan_lead: { x: CASE_SUB_ANCHORS.case_fan.x + 0.10, y: CASE_SUB_ANCHORS.case_fan.y - 0.45, z: CASE_SUB_ANCHORS.case_fan.z },
-      case_fp: { x: mbOrigin.x + 1.28, y: 1.16, z: -0.58 },
+      psu_main: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y + 0.16, z: -0.34 },
+      psu_eps:  { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y + 0.16, z: 0.28 },
+      psu_pcie: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y - 0.14, z: 0.22 },
+      psu_sata: { x: CASE_SUB_ANCHORS.psu.x + 0.75, y: CASE_SUB_ANCHORS.psu.y - 0.14, z: -0.34 },
+      mb_24pin: { x: mbOrigin.x + 1.15, y: mbOrigin.y + 0.45, z: mbOrigin.z + 0.11 },
+      mb_eps: { x: mbOrigin.x - 0.625, y: mbOrigin.y + 1.45, z: mbOrigin.z + 0.11 },
+      mb_cpufan: { x: mbOrigin.x + 0.68, y: mbOrigin.y + 1.41, z: mbOrigin.z + 0.09 },
+      mb_sata: { x: mbOrigin.x + 1.14, y: mbOrigin.y - 0.52, z: mbOrigin.z + 0.08 },
+      mb_sysfan: { x: mbOrigin.x + 1.14, y: mbOrigin.y + 0.90, z: mbOrigin.z + 0.09 },
+      mb_jfp1: { x: mbOrigin.x + 0.76, y: mbOrigin.y - 1.47, z: mbOrigin.z + 0.09 },
+      cooler_lead: { x: mbOrigin.x + 0.52, y: mbOrigin.y + 0.88, z: mbOrigin.z + 0.52 },
+      gpu_pwr: {
+        x: gpuAnchorX + gpuShiftX + gpuLen * 0.36,
+        y: gpuAnchorY + gpuThickY * 0.36,
+        z: gpuAnchorZ + gpuDepthZ - 0.02,
+      },
+      sata_drive: {
+        x: CASE_SUB_ANCHORS.sata_bay.x - 0.12,
+        y: CASE_SUB_ANCHORS.sata_bay.y,
+        z: CASE_SUB_ANCHORS.sata_bay.z - 0.56,
+      },
+      fan_lead: {
+        x: CASE_SUB_ANCHORS.case_fan.x + 0.08,
+        y: CASE_SUB_ANCHORS.case_fan.y - 0.52,
+        z: CASE_SUB_ANCHORS.case_fan.z,
+      },
+      case_fp: { x: CASE_ORIGIN.x + 0.45, y: 1.55, z: -0.70 },
     };
   }
 
@@ -319,11 +355,15 @@ export class ComponentManager {
 
     const coords = this._getPortWorldCoords();
     const installed = (slot) => Boolean(this.asm.slots[slot] && this.asm.slots[slot].status !== COMPONENT_STATE.STAGED);
+    const storageKind = this.asm.slots.storage?.component
+      ? detectStorageKind(this.asm.slots.storage.component)
+      : null;
     const activePorts = new Map();
 
     // Determine valid endpoint ports for currently installed components
     for (const def of CABLE_DEFINITIONS) {
       if (!installed(def.from) || !installed(def.to)) continue;
+      if ((def.from === 'storage' || def.to === 'storage') && storageKind === 'm2_nvme') continue;
       const isConn = Boolean(this.asm.cables[def.id]?.connected);
 
       const addPort = (portKey, partnerKey, label) => {
@@ -503,10 +543,59 @@ export class ComponentManager {
       ...(this.asm.slots[slotKey] || {}),
       position: worldPos,
       rotationStep,
-      mountLocation: worldPos.x < 0.85 ? 'case' : 'staging',
+      mountLocation: worldPos.x < -0.05 ? 'case' : 'staging',
     };
     this._applyTransform(slotKey, fakeEntry);
     this.sceneMgr.requestRender(120);
+  }
+
+  startDragGhost(slotKey, comp) {
+    this.clearDragGhost();
+    if (!slotKey || !comp || slotKey === 'case') return;
+    const group = createComponentMesh(slotKey, comp);
+    group.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material = child.material.clone();
+        child.material.transparent = true;
+        child.material.opacity = 0.78;
+      }
+    });
+    group.visible = false;
+    this.sceneMgr.scene.add(group);
+    this.dragGhost = { slotKey, comp, group };
+  }
+
+  updateDragGhost(worldPos, evalResult) {
+    if (!this.dragGhost) return;
+    const { slotKey, comp, group } = this.dragGhost;
+    const snapTarget = evalResult?.withinRange && !evalResult?.blocked ? evalResult.target : null;
+    const pos = snapTarget?.position || worldPos;
+    if (!pos) return;
+    group.visible = true;
+    group.position.set(pos.x, pos.y, pos.z);
+
+    if (snapTarget?.baseEuler) {
+      group.rotation.set(snapTarget.baseEuler.x, snapTarget.baseEuler.y, snapTarget.baseEuler.z);
+    } else if (
+      slotKey === 'mb' ||
+      ['cpu', 'cooler', 'ram'].includes(slotKey) ||
+      (slotKey === 'storage' && detectStorageKind(comp) === 'm2_nvme')
+    ) {
+      group.rotation.set(pos.x < -0.05 ? 0 : -Math.PI / 2, 0, 0);
+    } else if (slotKey === 'case_fan') {
+      group.rotation.set(0, pos.x < -0.05 ? Math.PI / 2 : 0, 0);
+    } else {
+      group.rotation.set(0, 0, 0);
+    }
+    this.sceneMgr.requestRender(120);
+  }
+
+  clearDragGhost() {
+    if (!this.dragGhost) return;
+    this.sceneMgr.scene.remove(this.dragGhost.group);
+    this._disposeGroup(this.dragGhost.group);
+    this.dragGhost = null;
+    this.sceneMgr.requestRender(80);
   }
 
   spinFans(dt) {
@@ -524,10 +613,14 @@ export class ComponentManager {
         if (Array.isArray(obj.material)) {
           obj.material.forEach((m) => {
             if (m.map) m.map.dispose();
+            if (m.bumpMap) m.bumpMap.dispose();
+            if (m.roughnessMap) m.roughnessMap.dispose();
             m.dispose();
           });
         } else {
           if (obj.material.map) obj.material.map.dispose();
+          if (obj.material.bumpMap) obj.material.bumpMap.dispose();
+          if (obj.material.roughnessMap) obj.material.roughnessMap.dispose();
           obj.material.dispose();
         }
       }

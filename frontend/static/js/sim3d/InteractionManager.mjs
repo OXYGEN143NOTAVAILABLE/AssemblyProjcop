@@ -8,6 +8,8 @@
 
 import * as THREE from 'three';
 import { COMPONENT_STATE } from './AssemblyManager.mjs';
+import { CASE_MB_ANCHOR, CASE_SUB_ANCHORS, STAGING_ANCHORS } from './PlacementSnappingSystem.mjs';
+import { detectStorageKind } from './SimulationDataManager.mjs';
 
 export class InteractionManager {
   constructor(sceneManager, componentManager, assemblyManager, callbacks = {}) {
@@ -22,11 +24,12 @@ export class InteractionManager {
     this.lastHoverCheckMs = 0;
 
     // Pre-allocated drag planes & scratch vectors
-    this.deskPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.14);
-    this.casePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.45);
+    this.deskPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.04);
+    this.casePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.56);
     this._hitPt = new THREE.Vector3();
 
-    this.dragState = null; // { slotKey, currentPos, rotationStep, pointerId }
+    this.dragState = null; // { slotKey, currentPos, rotationStep }
+    this.externalDrag = null; // { slotKey, comp, lastEval, currentPos }
     this.downInfo = null;
 
     this._bindEvents();
@@ -53,9 +56,70 @@ export class InteractionManager {
   }
 
   _updatePointerNdc(event) {
+    this._setNdcFromClient(event.clientX, event.clientY);
+  }
+
+  _setNdcFromClient(clientX, clientY) {
     const rect = this.sceneMgr.renderer.domElement.getBoundingClientRect();
-    this.pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointerNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    const w = Math.max(1, rect.width);
+    const h = Math.max(1, rect.height);
+    this.pointerNdc.x = ((clientX - rect.left) / w) * 2 - 1;
+    this.pointerNdc.y = -((clientY - rect.top) / h) * 2 + 1;
+  }
+
+  _getStagingGroundY(slotKey, comp = null) {
+    if (slotKey === 'storage' && comp) {
+      const kind = detectStorageKind(comp);
+      if (kind === 'sata_35') return 0.14;
+      if (kind === 'm2_nvme') return 0.03;
+      return 0.05;
+    }
+    return STAGING_ANCHORS[slotKey]?.y ?? 0.05;
+  }
+
+  _getCaseZDepth(slotKey, comp = null) {
+    if (slotKey === 'mb') return CASE_MB_ANCHOR.z;
+    if (slotKey === 'psu') return CASE_SUB_ANCHORS.psu.z;
+    if (slotKey === 'case_fan') return CASE_SUB_ANCHORS.case_fan.z;
+    if (slotKey === 'storage' && comp && detectStorageKind(comp) !== 'm2_nvme') {
+      return CASE_SUB_ANCHORS.sata_bay.z;
+    }
+    return CASE_MB_ANCHOR.z + 0.08;
+  }
+
+  _projectClientToWorld(clientX, clientY, slotKey, comp = null) {
+    this._setNdcFromClient(clientX, clientY);
+    this.raycaster.setFromCamera(this.pointerNdc, this.sceneMgr.camera);
+
+    const benchY = this._getStagingGroundY(slotKey, comp);
+    this.deskPlane.constant = -benchY;
+
+    let projected = false;
+    if (this.raycaster.ray.intersectPlane(this.deskPlane, this._hitPt)) {
+      if (this._hitPt.x >= -0.05) {
+        this._hitPt.y = benchY;
+        projected = true;
+      }
+    }
+    if (!projected) {
+      const zDepth = this._getCaseZDepth(slotKey, comp);
+      this.casePlane.constant = -zDepth;
+      if (this.raycaster.ray.intersectPlane(this.casePlane, this._hitPt)) {
+        this._hitPt.y = Math.max(0.25, Math.min(4.65, this._hitPt.y));
+        projected = true;
+      }
+    }
+    if (!projected && this.raycaster.ray.intersectPlane(this.deskPlane, this._hitPt)) {
+      this._hitPt.y = benchY;
+      projected = true;
+    }
+    if (!projected) return null;
+
+    return {
+      x: Math.max(-5.9, Math.min(8.1, this._hitPt.x)),
+      y: this._hitPt.y,
+      z: Math.max(-3.35, Math.min(3.35, this._hitPt.z)),
+    };
   }
 
   _pickCablePort(event) {
@@ -164,37 +228,16 @@ export class InteractionManager {
 
   _handlePointerMove(event) {
     if (this.dragState) {
-      this._updatePointerNdc(event);
-      this.raycaster.setFromCamera(this.pointerNdc, this.sceneMgr.camera);
-
-      // Dual-plane ergonomic projection:
-      // Left side (x < 0.85) maps vertically inside the Case Z-plane;
-      // Right side maps horizontally onto ESD Workbench Prep/Staging plane!
-      let projected = false;
-      if (this.raycaster.ray.intersectPlane(this.deskPlane, this._hitPt)) {
-        if (this._hitPt.x >= 0.75) {
-          this._hitPt.y = Math.max(0.08, this.dragState.currentPos.y > 0.8 ? 0.16 : this.dragState.currentPos.y);
-          projected = true;
-        }
-      }
-      if (!projected) {
-        const zDepth = this.dragState.slotKey === 'mb' ? -0.68 : -0.42;
-        this.casePlane.constant = -zDepth;
-        if (this.raycaster.ray.intersectPlane(this.casePlane, this._hitPt)) {
-          this._hitPt.y = Math.max(0.25, Math.min(4.65, this._hitPt.y));
-          projected = true;
-        }
-      }
-
-      if (!projected) return;
-
-      this.dragState.currentPos = {
-        x: Math.max(-4.5, Math.min(5.2, this._hitPt.x)),
-        y: this._hitPt.y,
-        z: Math.max(-2.8, Math.min(2.8, this._hitPt.z)),
-      };
-
       const entry = this.asm.slots[this.dragState.slotKey];
+      const worldPos = this._projectClientToWorld(
+        event.clientX,
+        event.clientY,
+        this.dragState.slotKey,
+        entry?.component
+      );
+      if (!worldPos) return;
+
+      this.dragState.currentPos = worldPos;
       const ctx = this.asm._snappingContext(entry?.component);
       const evalRes = this.asm.snapping.evaluatePlacement(
         this.dragState.slotKey,
@@ -266,7 +309,7 @@ export class InteractionManager {
             : res.reason,
           res.aligned ? 'ok' : 'warn'
         );
-      } else if (lastEval?.status === 'no_anchor' && currentPos.x < 0.6) {
+      } else if (lastEval?.status === 'no_anchor' && currentPos.x < -0.1) {
         this.callbacks.onFeedback?.(lastEval.reason, 'info');
       }
       return;
@@ -289,6 +332,104 @@ export class InteractionManager {
     this.sceneMgr.renderer.domElement.style.cursor = 'default';
     this.compMgr.syncAllMeshes();
     this.callbacks.onDragStatus?.(null, null);
+  }
+
+  beginExternalDrag(slotKey, comp) {
+    if (this.readOnly || !slotKey || !comp) return;
+    this.externalDrag = { slotKey, comp, lastEval: null, currentPos: null };
+    if (slotKey !== 'case') {
+      this.compMgr.startDragGhost(slotKey, comp);
+    }
+  }
+
+  updateExternalDrag(clientX, clientY) {
+    if (this.readOnly || !this.externalDrag) return null;
+    const { slotKey, comp } = this.externalDrag;
+    if (slotKey === 'case') {
+      const fakeEval = { withinRange: true, status: 'aligned', target: { label: 'PC Case Workstation Bay' } };
+      this.callbacks.onDragStatus?.('case', fakeEval);
+      return fakeEval;
+    }
+    const worldPos = this._projectClientToWorld(clientX, clientY, slotKey, comp);
+    if (!worldPos) return null;
+    this.externalDrag.currentPos = worldPos;
+
+    const evalRes = this.asm.snapping.evaluatePlacement(
+      slotKey,
+      worldPos,
+      0,
+      this.asm._snappingContext(comp)
+    );
+    this.externalDrag.lastEval = evalRes;
+    this.compMgr.updateDragGhost(worldPos, evalRes);
+    this.compMgr.showSnapGuide(evalRes);
+    this.callbacks.onDragStatus?.(slotKey, evalRes);
+    return evalRes;
+  }
+
+  cancelExternalDrag() {
+    if (!this.externalDrag) return;
+    this.externalDrag = null;
+    this.compMgr.clearDragGhost();
+    this.compMgr.hideSnapGuide();
+    this.callbacks.onDragStatus?.(null, null);
+  }
+
+  finishExternalDrag(clientX, clientY, fallbackPayload = null) {
+    const active = this.externalDrag || fallbackPayload;
+    this.externalDrag = null;
+    this.compMgr.clearDragGhost();
+    this.compMgr.hideSnapGuide();
+    this.callbacks.onDragStatus?.(null, null);
+
+    if (this.readOnly || !active?.slotKey || !active?.comp) {
+      return { ok: false, reason: 'Nothing to drop.' };
+    }
+
+    const { slotKey, comp } = active;
+    if (slotKey === 'case') {
+      const res = this.asm.stageComponent('case', comp);
+      if (!res.ok) {
+        this.callbacks.onFeedback?.(res.reason, 'warn');
+        return res;
+      }
+      this.selectSlot('case');
+      this.callbacks.onFeedback?.(`Switched PC Case to ${comp.name}`, 'ok');
+      return res;
+    }
+
+    const worldPos = this._projectClientToWorld(clientX, clientY, slotKey, comp);
+    const stageRes = this.asm.stageComponent(slotKey, comp);
+    if (!stageRes.ok) {
+      this.callbacks.onFeedback?.(stageRes.reason, 'warn');
+      return stageRes;
+    }
+
+    if (!worldPos) {
+      this.selectSlot(slotKey);
+      this.callbacks.onFeedback?.(`${comp.name} placed on ESD Staging Tray.`, 'ok');
+      return { ok: true, snapped: false };
+    }
+
+    const placeRes = this.asm.placeComponentAt(slotKey, worldPos, 0);
+    this.selectSlot(slotKey);
+
+    if (placeRes.blocked) {
+      this.callbacks.onFeedback?.(placeRes.reason, 'warn');
+      return placeRes;
+    }
+    if (placeRes.snapped) {
+      this.callbacks.onFeedback?.(
+        placeRes.aligned
+          ? `Aligned at ${placeRes.target?.label || 'mount'} — click Secure / Latch to lock.`
+          : placeRes.reason,
+        placeRes.aligned ? 'ok' : 'warn'
+      );
+      return placeRes;
+    }
+
+    this.callbacks.onFeedback?.(`${comp.name} dropped on workbench — drag into socket/bay or click Snap.`, 'ok');
+    return placeRes;
   }
 
   _handleKeyDown(event) {

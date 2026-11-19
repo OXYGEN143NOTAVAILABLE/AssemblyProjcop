@@ -8,6 +8,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   SimulationDataManager,
   HARDWARE_SLOTS,
@@ -263,6 +264,56 @@ class SimulatorApp {
       }
       return false;
     };
+
+    // Drag-and-Drop directly from Left Sidebar into 3D Viewport
+    mount.addEventListener('dragenter', (e) => {
+      if (this.readOnly) return;
+      e.preventDefault();
+      mount.classList.add('drag-over-active');
+    });
+    mount.addEventListener('dragover', (e) => {
+      if (this.readOnly) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      mount.classList.add('drag-over-active');
+      this.interactionMgr?.updateExternalDrag(e.clientX, e.clientY);
+    });
+    mount.addEventListener('dragleave', (e) => {
+      if (!e.relatedTarget || !mount.contains(e.relatedTarget)) {
+        mount.classList.remove('drag-over-active');
+      }
+    });
+    mount.addEventListener('drop', (e) => {
+      mount.classList.remove('drag-over-active');
+      if (this.readOnly) return;
+      e.preventDefault();
+      let payload = null;
+      try {
+        const raw = e.dataTransfer?.getData('application/x-sim-comp');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const comp = this.dataMgr.findComponent(parsed.cat, parsed.id);
+          if (comp) payload = { slotKey: parsed.cat, comp };
+        } else {
+          const plain = e.dataTransfer?.getData('text/plain') || '';
+          const idx = plain.indexOf(':');
+          if (idx > 0) {
+            const cat = plain.slice(0, idx);
+            const id = plain.slice(idx + 1);
+            const comp = this.dataMgr.findComponent(cat, id);
+            if (comp) payload = { slotKey: cat, comp };
+          }
+        }
+      } catch {
+        payload = null;
+      }
+      const res = this.interactionMgr?.finishExternalDrag(e.clientX, e.clientY, payload);
+      if (res?.ok && res.snapped) {
+        this.sfx.playSnap(res.aligned !== false);
+      } else if (res?.ok) {
+        this.sfx.playSnap(true);
+      }
+    });
   }
 
   async _loadCatalog() {
@@ -399,20 +450,43 @@ class SimulatorApp {
         : '';
 
       return `
-        <div class="comp-item ${isActive ? 'active-part' : ''}" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">
+        <div class="comp-item ${isActive ? 'active-part' : ''}" draggable="true" title="Drag onto 3D workbench or click to stage" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">
+          <span class="comp-drag-handle" aria-hidden="true">⋮⋮</span>
           <div class="comp-icon ${badge.cls}" style="font-size:9px;font-weight:800;">${badge.abbr}</div>
           <div class="comp-info">
             <div class="comp-name" title="${escapeHtml(comp.name)}">${escapeHtml(comp.name)}</div>
             <div class="comp-sub">${escapeHtml(comp.sub || comp.brand || SLOT_DISPLAY_NAMES[comp.cat])}</div>
           </div>
           ${stateTag ? `<span class="comp-pill">${stateTag}</span>` : ''}
-          <button type="button" class="comp-inspect-btn" title="Inspect 3D Model" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">3D</button>
-          <button type="button" class="comp-specs-btn" title="Inspect Specs" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">i</button>
+          <button type="button" class="comp-inspect-btn" draggable="false" title="Inspect 3D Model" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">3D</button>
+          <button type="button" class="comp-specs-btn" draggable="false" title="Inspect Specs" data-cat="${escapeHtml(comp.cat)}" data-id="${escapeHtml(comp.id)}">i</button>
         </div>
       `;
     }).join('');
 
     listEl.querySelectorAll('.comp-item').forEach((row) => {
+      row.addEventListener('dragstart', (e) => {
+        if (this.readOnly || e.target.closest('.comp-specs-btn,.comp-inspect-btn')) {
+          e.preventDefault();
+          return;
+        }
+        const cat = row.dataset.cat;
+        const id = row.dataset.id;
+        const comp = this.dataMgr.findComponent(cat, id);
+        if (!comp) return;
+        row.classList.add('dragging-from-sidebar');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'copyMove';
+          e.dataTransfer.setData('application/x-sim-comp', JSON.stringify({ cat, id }));
+          e.dataTransfer.setData('text/plain', `${cat}:${id}`);
+        }
+        this.interactionMgr?.beginExternalDrag(cat, comp);
+      });
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging-from-sidebar');
+        document.getElementById('sim3dViewport')?.classList.remove('drag-over-active');
+        this.interactionMgr?.cancelExternalDrag();
+      });
       row.addEventListener('click', (e) => {
         if (e.target.closest('.comp-specs-btn,.comp-inspect-btn')) return;
         const cat = row.dataset.cat;
@@ -577,7 +651,7 @@ class SimulatorApp {
   }
 
   _updateHoverPortHint(portHit) {
-    if (this.interactionMgr?.dragState || !portHit) return;
+    if (this.interactionMgr?.dragState || this.interactionMgr?.externalDrag || !portHit) return;
     const pill = document.getElementById('liveStatusPill');
     if (!pill) return;
     if (this.pendingCablePort) {
@@ -590,7 +664,7 @@ class SimulatorApp {
   }
 
   _updateHoverHint(slotKey, fastenerSlot = null) {
-    if (this.interactionMgr?.dragState) return;
+    if (this.interactionMgr?.dragState || this.interactionMgr?.externalDrag) return;
     const pill = document.getElementById('liveStatusPill');
     if (!pill) return;
     if (this.pendingCablePort) {
@@ -606,8 +680,8 @@ class SimulatorApp {
     }
     if (!slotKey) {
       pill.textContent = this.asm.sidePanelOpen
-        ? 'Drag parts · Click CPU/RAM latches or cyan 3D ports to wire · R: Rotate · F: Focus'
-        : 'Open Side Panel to access case interior, or stage Motherboard on ESD Prep Pad';
+        ? 'Drag parts from sidebar or workbench · Click latches/cyan ports to wire · R: Rotate · F: Focus'
+        : 'Drag parts onto ESD Prep Pad or open Side Panel to install inside case';
       pill.className = 'sim-status-pill';
       return;
     }
@@ -1546,23 +1620,31 @@ class SimulatorApp {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
     mount.innerHTML = '';
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x081220);
+    scene.background = new THREE.Color(0x0b1526);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const roomEnv = new RoomEnvironment();
+    const envRenderTarget = pmrem.fromScene(roomEnv, 0.04);
+    scene.environment = envRenderTarget.texture;
+    roomEnv.dispose();
 
     const camera = new THREE.PerspectiveCamera(42, w / h, 0.05, 80);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
 
-    scene.add(new THREE.AmbientLight(0xdbeafe, 1.35));
-    scene.add(new THREE.HemisphereLight(0xf8fafc, 0x1e293b, 0.95));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    scene.add(new THREE.AmbientLight(0xdbeafe, 1.1));
+    scene.add(new THREE.HemisphereLight(0xf8fafc, 0x334155, 1.05));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
     keyLight.position.set(4, 6, 5);
     scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.0);
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.15);
     fillLight.position.set(-4, -3, -4);
     scene.add(fillLight);
 
@@ -1591,13 +1673,29 @@ class SimulatorApp {
 
     let active = true;
     let rafId = 0;
-    const renderLoop = () => {
+    let renderUntil = performance.now() + 400;
+    let pending = false;
+
+    const requestInspRender = (keepMs = 250) => {
+      if (!active) return;
+      renderUntil = Math.max(renderUntil, performance.now() + keepMs);
+      if (pending) return;
+      pending = true;
+      rafId = requestAnimationFrame(renderTick);
+    };
+
+    const renderTick = (now) => {
+      pending = false;
       if (!active) return;
       controls.update();
       renderer.render(scene, camera);
-      rafId = requestAnimationFrame(renderLoop);
+      if (now < renderUntil) {
+        requestInspRender(0);
+      }
     };
-    renderLoop();
+
+    controls.addEventListener('change', () => requestInspRender(180));
+    requestInspRender(350);
 
     this.inspectorCtx = {
       renderer,
@@ -1606,6 +1704,9 @@ class SimulatorApp {
       controls,
       modelPivot,
       defaultCamPos,
+      pmrem,
+      envRenderTarget,
+      requestRender: requestInspRender,
       stop: () => { active = false; cancelAnimationFrame(rafId); },
     };
   }
@@ -1613,11 +1714,13 @@ class SimulatorApp {
   rotateInspectorModel() {
     if (!this.inspectorCtx) return;
     this.inspectorCtx.modelPivot.rotation.y += Math.PI / 2;
+    this.inspectorCtx.requestRender(120);
   }
 
   flipInspectorModel() {
     if (!this.inspectorCtx) return;
     this.inspectorCtx.modelPivot.rotation.x += Math.PI;
+    this.inspectorCtx.requestRender(120);
   }
 
   resetInspectorView() {
@@ -1626,6 +1729,7 @@ class SimulatorApp {
     this.inspectorCtx.camera.position.copy(this.inspectorCtx.defaultCamPos);
     this.inspectorCtx.controls.target.set(0, 0, 0);
     this.inspectorCtx.controls.update();
+    this.inspectorCtx.requestRender(180);
   }
 
   closeInspector3D() {
@@ -1641,14 +1745,20 @@ class SimulatorApp {
         if (Array.isArray(obj.material)) {
           obj.material.forEach((m) => {
             if (m.map) m.map.dispose();
+            if (m.bumpMap) m.bumpMap.dispose();
+            if (m.roughnessMap) m.roughnessMap.dispose();
             m.dispose();
           });
         } else {
           if (obj.material.map) obj.material.map.dispose();
+          if (obj.material.bumpMap) obj.material.bumpMap.dispose();
+          if (obj.material.roughnessMap) obj.material.roughnessMap.dispose();
           obj.material.dispose();
         }
       }
     });
+    if (ctx.envRenderTarget) ctx.envRenderTarget.dispose();
+    if (ctx.pmrem) ctx.pmrem.dispose();
     ctx.renderer.dispose();
     const mount = document.getElementById('inspector3dViewport');
     if (mount) mount.innerHTML = '';

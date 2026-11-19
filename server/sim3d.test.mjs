@@ -341,3 +341,26 @@ test('Phase 2: TROUBLESHOOTING_PRESETS load cleanly from DB catalog, fail with e
   }
 });
 
+test('Spatial anchors ground every staging part on the ESD mat and align PSU/MB/Fan inside case bounds', () => {
+  // ESD mat bounds: X [-5.05 .. +5.75], Z [-2.90 .. +2.90], top at Y=0
+  for (const [slot, pos] of Object.entries(STAGING_ANCHORS)) {
+    assert.ok(pos.x >= -4.8 && pos.x <= 5.5, `${slot} staging X=${pos.x} out of mat bounds`);
+    assert.ok(pos.z >= -2.7 && pos.z <= 2.7, `${slot} staging Z=${pos.z} out of mat bounds`);
+    assert.ok(pos.y > 0 && pos.y <= 0.65, `${slot} staging Y=${pos.y} looks floating`);
+  }
+  assert.ok(STAGING_ANCHORS.cooler.y <= 0.05, 'Cooler should rest coldplate flush on mat');
+  assert.ok(STAGING_ANCHORS.ram.y <= 0.05, 'RAM should rest edge pins flush on mat');
+  assert.ok(STAGING_ANCHORS.gpu.y <= 0.25, 'GPU should rest shroud flush on mat');
+
+  // PSU inside case shroud: floor top = 0.11, hY = 0.86 (half 0.43), shroud top = 1.12
+  assert.ok(CASE_SUB_ANCHORS.psu.y - 0.43 >= 0.12, 'PSU sinks into case floor');
+  assert.ok(CASE_SUB_ANCHORS.psu.y + 0.43 <= 1.10, 'PSU clips top of shroud');
+
+  // Motherboard PCB back (-0.018) must rest at or in front of brass standoff tips (-0.680)
+  assert.ok(CASE_MB_ANCHOR.z - 0.018 >= -0.681, 'Motherboard clips into brass standoffs');
+
+  // Rear case fan should sit cleanly toward +Z glass side away from rear I/O shroud (-0.70..-0.34)
+  assert.ok(CASE_SUB_ANCHORS.case_fan.z >= 0.20, 'Case fan clips into motherboard I/O shroud');
+});
+
+
