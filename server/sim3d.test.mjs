@@ -342,11 +342,28 @@ test('Phase 2: TROUBLESHOOTING_PRESETS load cleanly from DB catalog, fail with e
 });
 
 test('Spatial anchors ground every staging part on the ESD mat and align PSU/MB/Fan inside case bounds', () => {
-  // ESD mat bounds: X [-5.05 .. +5.75], Z [-2.90 .. +2.90], top at Y=0
+  // Expanded ESD mat bounds: BoxGeometry(14.8, 0.02, 7.2) centered at (1.10, -0.01, 0)
+  // World X [-6.30 .. +8.50], Z [-3.60 .. +3.60], top at Y=0
   for (const [slot, pos] of Object.entries(STAGING_ANCHORS)) {
-    assert.ok(pos.x >= -4.8 && pos.x <= 5.5, `${slot} staging X=${pos.x} out of mat bounds`);
-    assert.ok(pos.z >= -2.7 && pos.z <= 2.7, `${slot} staging Z=${pos.z} out of mat bounds`);
+    assert.ok(pos.x >= -6.10 && pos.x <= 8.30, `${slot} staging X=${pos.x} out of mat bounds`);
+    assert.ok(pos.z >= -3.40 && pos.z <= 3.40, `${slot} staging Z=${pos.z} out of mat bounds`);
     assert.ok(pos.y > 0 && pos.y <= 0.65, `${slot} staging Y=${pos.y} looks floating`);
+    if (slot === 'mb') {
+      assert.equal(pos.x, BENCH_PREP_ORIGIN.x, 'Motherboard staging should match BENCH_PREP_ORIGIN');
+    } else {
+      // Staging tray spans X [3.35 .. 7.85], Z [-3.25 .. +3.25]
+      assert.ok(pos.x >= 3.35 && pos.x <= 7.85, `${slot} staging X=${pos.x} outside STAGING TRAY`);
+      assert.ok(pos.z >= -3.25 && pos.z <= 3.25, `${slot} staging Z=${pos.z} outside STAGING TRAY`);
+    }
+  }
+  const stagedEntries = Object.entries(STAGING_ANCHORS);
+  for (let i = 0; i < stagedEntries.length; i += 1) {
+    for (let j = i + 1; j < stagedEntries.length; j += 1) {
+      const [slotA, a] = stagedEntries[i];
+      const [slotB, b] = stagedEntries[j];
+      const xzDist = Math.hypot(a.x - b.x, a.z - b.z);
+      assert.ok(xzDist >= 0.70, `Staged parts ${slotA} and ${slotB} overlap (dist=${xzDist.toFixed(2)})`);
+    }
   }
   assert.ok(STAGING_ANCHORS.cooler.y <= 0.05, 'Cooler should rest coldplate flush on mat');
   assert.ok(STAGING_ANCHORS.ram.y <= 0.05, 'RAM should rest edge pins flush on mat');

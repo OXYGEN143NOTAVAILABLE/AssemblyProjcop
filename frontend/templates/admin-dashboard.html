@@ -553,7 +553,7 @@ const USER_SCHEMAS = {
     fields: ['student_id', 'school_id', 'display_name', 'email', 'is_active', 'last_login_at', 'created_at'],
     labels: ['ID', 'Student ID', 'Name', 'Email', 'Active', 'Last Login', 'Created'],
     createTitle: 'Add Student',
-    createSubtitle: 'Create a student account in PostgreSQL',
+    createSubtitle: 'Create a student account in the database',
     createFields: [
       {name:'firstName', label:'First Name', type:'text', required:true},
       {name:'lastName', label:'Last Name', type:'text', required:true},
@@ -570,7 +570,7 @@ const USER_SCHEMAS = {
     fields: ['admin_id', 'username', 'display_name', 'is_active', 'last_login_at', 'created_at'],
     labels: ['ID', 'Email / Username', 'Name', 'Active', 'Last Login', 'Created'],
     createTitle: 'Add Instructor',
-    createSubtitle: 'Create an instructor account in PostgreSQL',
+    createSubtitle: 'Create an instructor account in the database',
     createFields: [
       {name:'firstName', label:'First Name', type:'text', required:true},
       {name:'lastName', label:'Last Name', type:'text', required:true},
@@ -629,7 +629,7 @@ async function loadSchemaData(){
     touchSaved();
   }catch(e){
     console.error('Failed to load schema data:',e);
-    toast('Failed to load PostgreSQL data: '+e.message,'error');
+    toast('Failed to load database data: '+e.message,'error');
     ensureDbShape();
   }
 }
@@ -737,7 +737,7 @@ window.onload = async () => {
 };
 
 function loadFromStorage(){
-  // PostgreSQL is the only data source for dashboard rows.
+  // SQLite database is the single source of truth for dashboard rows.
 }
 
 function saveToStorage(){
@@ -1165,7 +1165,7 @@ async function commitInline(inp){
     const saved = await apiSaveComponent(currentCat, id, row);
     Object.assign(row, saved);
     saveToStorage();
-    toast('Cell updated in PostgreSQL','success');
+    toast('Cell updated in database','success');
   }catch(err){
     row[field]=previous;
     toast('Update failed: '+err.message,'error');
@@ -1251,7 +1251,7 @@ function bulkDelete(){
         selectedIds.clear();
         saveToStorage();
         renderTable();
-        toast(`${count} component(s) deleted from PostgreSQL`,'error');
+        toast(`${count} component(s) deleted from database`,'error');
       }catch(err){
         toast('Bulk delete failed: '+err.message,'error');
       }
@@ -1353,11 +1353,11 @@ async function saveModal(){
       const saved = await apiSaveComponent(currentCat, modalEditId, data);
       const idx = DB[currentCat].findIndex(r=>r.id===modalEditId);
       if(idx>=0) DB[currentCat][idx]=saved;
-      toast('Component updated in PostgreSQL','success');
+      toast('Component updated in database','success');
     } else {
       const saved = await apiSaveComponent(currentCat, null, data);
       DB[currentCat].push(saved);
-      toast('Component added to PostgreSQL','success');
+      toast('Component added to database','success');
     }
     saveToStorage();
     closeModalDirect();
@@ -1379,7 +1379,7 @@ async function saveUserModal(){
     await reloadUserData();
     closeModalDirect();
     renderTable();
-    toast(`${currentUserType === 'students' ? 'Student' : 'Instructor'} added to PostgreSQL`,'success');
+    toast(`${currentUserType === 'students' ? 'Student' : 'Instructor'} added to database`,'success');
   }catch(err){
     toast('User save failed: '+err.message,'error');
   }
@@ -1400,7 +1400,7 @@ function confirmDelete(id){
       selectedIds.delete(id);
       saveToStorage();
       renderTable();
-      toast('Component deleted from PostgreSQL','error');
+      toast('Component deleted from database','error');
     }catch(err){
       toast('Delete failed: '+err.message,'error');
     }
@@ -1418,7 +1418,7 @@ function confirmDeleteUser(type, id){
       USER_DB[type] = (USER_DB[type] || []).filter(r=>Number(r[schema.idField])!==Number(id));
       await reloadUserData();
       renderTable();
-      toast(`${label.charAt(0).toUpperCase()+label.slice(1)} account deleted from PostgreSQL`,'error');
+      toast(`${label.charAt(0).toUpperCase()+label.slice(1)} account deleted from database`,'error');
     }catch(err){
       toast('User delete failed: '+err.message,'error');
     }
@@ -1471,7 +1471,7 @@ function importXLSX(e){
       renderTable();
       updateCountBadges();
       updateTotalStat();
-      toast(`Imported ${imported} components into PostgreSQL from ${file.name}`,'success');
+      toast(`Imported ${imported} components into database from ${file.name}`,'success');
     }catch(err){
       toast('Import failed: '+err.message,'error');
     }
