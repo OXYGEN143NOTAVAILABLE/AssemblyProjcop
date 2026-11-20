@@ -118,6 +118,8 @@ npm run dev
 
 For production or to use the frontend through FastAPI, build the React app with `npm run build`. FastAPI serves the built app for user-facing pages and keeps the existing `/api/*` endpoints as the backend.
 
+Students can sign in from the homepage and are taken to the React dashboard at `/student/dashboard`. Published instructor activities appear there; selecting one opens the existing simulator with that scenario loaded. Build the dashboard with `npm run build` before starting the server.
+
 ## Database Schema Synchronization
 
 Automatically keep your PostgreSQL database in sync with schema changes:

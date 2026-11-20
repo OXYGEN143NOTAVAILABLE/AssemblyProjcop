@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "build": "node -e \"console.log('Static templates ready')\"",
+    "build": "npm --prefix frontend run build",
     "start": "node server.mjs",
     "lint": "eslint firestore.rules",
     "test": "node --test server/logic.test.mjs server/sim3d.test.mjs"

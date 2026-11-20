@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="72" viewBox="0 0 344 72" fill="none">
+  <defs>
+    <linearGradient id="mark" x1="4" y1="4" x2="64" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3ECF5E"/>
+      <stop offset="1" stop-color="#28A745"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="68" height="68" rx="19" fill="url(#mark)"/>
+  <path d="M22 18.5h28v35H22z" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M28 25h16v13H28z" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M29 46h14M29 51h9" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M36 29.5v4M34 31.5h4" stroke="#3ECF5E" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M50 24h5m-5 8h5m-5 8h5M17 25h5m-5 8h5m-5 8h5M28 18v-4m8 4v-4m8 4v-4m-16 43v4m8-4v4m8-4v4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="84" y="46" fill="#F0F4F8" font-family="Sora, Manrope, Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="-1.1">Assembly</text>
+  <text x="240" y="46" fill="#3ECF5E" font-family="Sora, Manrope, Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="-1.1">PC</text>
+</svg>

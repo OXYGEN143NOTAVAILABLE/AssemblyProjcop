@@ -32,6 +32,7 @@ server/data/
 dist/
 build/
 /frontend/static/app/
+/frontend/static/student-app/
 
 # Mac
 .DS_Store

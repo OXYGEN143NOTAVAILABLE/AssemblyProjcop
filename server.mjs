@@ -571,7 +571,7 @@ app.post('/api/auth/register', (req, res) => {
       const user = createStudentUser(payload);
       const pub = publicStudentUser(user);
       const token = setAppSessionCookie(req, res, 'student', user.school_id, remember);
-      return res.json({ ok: true, user: pub, token, redirectUrl: '/simulator' });
+      return res.json({ ok: true, user: pub, token, redirectUrl: '/student/dashboard' });
     }
     if (['instructor', 'teacher', 'admin'].includes(role)) {
       const user = createInstructorUser(payload);
@@ -613,7 +613,7 @@ app.post('/api/auth/login', (req, res) => {
       user.last_login_at = new Date().toISOString();
       db.updateStudentLogin(user.student_id, user.last_login_at);
       const token = setAppSessionCookie(req, res, 'student', user.school_id, remember);
-      return res.json({ ok: true, user: publicStudentUser(user), token, redirectUrl: '/simulator' });
+      return res.json({ ok: true, user: publicStudentUser(user), token, redirectUrl: '/student/dashboard' });
     }
 
     if (role === 'admin') {
@@ -838,6 +838,35 @@ app.get('/api/scenarios', (req, res) => {
     .filter((s) => s.is_published && (instructorId === null || s.instructor_id === instructorId))
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
   res.json(rows.map(scenarioRowToPublic));
+});
+
+app.get('/api/student/activities', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const completions = new Map(
+    store.scenario_completions
+      .filter((completion) => completion.user_role === 'student' && completion.user_id === user.id)
+      .map((completion) => [completion.scenario_id, completion])
+  );
+  const activities = store.pc_scenarios
+    .filter((scenario) => scenario.is_published)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((scenario) => {
+      const completion = completions.get(scenario.scenario_id);
+      return {
+        ...scenarioRowToPublic(scenario),
+        status: completion ? 'completed' : 'notStarted',
+        completion: completion
+          ? { score: completion.score, completedAt: completion.completed_at }
+          : null,
+      };
+    });
+
+  res.json({ activities });
 });
 
 app.get('/api/scenarios/:scenarioId', (req, res) => {
@@ -1736,6 +1765,10 @@ const staticDir = path.join(__dirname, 'frontend', 'static');
 if (fs.existsSync(staticDir)) {
   app.use('/static', express.static(staticDir));
 }
+const studentAppDir = path.join(staticDir, 'student-app');
+if (fs.existsSync(studentAppDir)) {
+  app.use('/student-assets', express.static(studentAppDir));
+}
 
 app.use('/vendor/three/addons', express.static(path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm')));
 app.use('/vendor/three', express.static(path.join(__dirname, 'node_modules', 'three', 'build')));
@@ -1759,6 +1792,14 @@ app.get('/', (_req, res) => {
   const html = readAndProcessTemplate('homepage.html');
   if (!html) return res.status(500).send('<h1>Assembly PC</h1><p>Homepage template not found.</p>');
   res.type('html').send(html);
+});
+
+app.get(['/student', '/student/dashboard'], (_req, res) => {
+  const studentAppIndex = path.join(studentAppDir, 'index.html');
+  if (!fs.existsSync(studentAppIndex)) {
+    return res.status(503).send('Student dashboard is not built. Run npm run build in the frontend directory.');
+  }
+  return res.type('html').sendFile(studentAppIndex);
 });
 
 app.get('/simulator', (req, res) => {

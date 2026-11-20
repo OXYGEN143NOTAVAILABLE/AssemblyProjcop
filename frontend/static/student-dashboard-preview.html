@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f6f8" />
+  <title>Student Dashboard — Assembly PC</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0d1b2e;
+      --muted: #7a9ab5;
+      --line: #e2e8f0;
+      --canvas: #f4f6f8;
+      --surface: #fff;
+      --green: #3ecf5e;
+      --green-dark: #28a745;
+      --green-soft: rgba(62, 207, 94, .12);
+      --navy: #0d1b2e;
+      --navy-mid: #112240;
+      --navy-light: #1a2f4a;
+      --text-white: #f0f4f8;
+      --navy-soft: rgba(17, 34, 64, .08);
+      --shadow: 0 8px 26px rgba(13, 27, 46, .06);
+    }
+
+    * { box-sizing: border-box; }
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+    *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--canvas); color: var(--ink); font-family: "DM Sans", sans-serif; }
+    button, a { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; }
+    .app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+    .app.sidebar-hidden { grid-template-columns: minmax(0, 1fr); }
+    .sidebar-hidden .sidebar { display: none; }
+    .sidebar-hidden .main { grid-column: 1; }
+    .sidebar { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; position: sticky; top: 76px; height: calc(100vh - 76px); padding: 27px 18px 20px; background: var(--navy); border-right: 1px solid var(--navy-light); color: var(--text-white); }
+    .sidebar-header { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 38px; }
+    .brand { display: flex; align-items: center; gap: 9px; margin: 0; text-decoration: none; }
+    .brand-logo { display: block; width: 172px; height: 36px; flex: 0 0 auto; object-fit: contain; object-position: left center; }
+    .topbar-brand { min-width: 0; }
+    .brand-name { color: var(--text-white); font: 800 17px Manrope, sans-serif; letter-spacing: -.5px; }
+    .brand-name span { color: var(--green); }
+    .brand-divider { width: 1px; height: 23px; background: var(--navy-light); }
+    .brand-section { color: var(--text-white); font: 700 13px Manrope, sans-serif; white-space: nowrap; }
+    .nav-label { margin: 0 12px 10px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+    .side-nav { display: grid; gap: 5px; }
+    .side-link { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); text-align: left; cursor: pointer; transition: .15s ease; }
+    .side-link:hover { background: var(--navy-light); color: var(--text-white); }
+    .side-link.active { background: var(--green); color: var(--navy); font-weight: 700; }
+    .side-link svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .sidebar-bottom { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); }
+    .account-shortcut { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 8px; border: 0; background: transparent; color: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+    .avatar { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; color: #fff; background: var(--navy-mid); font: 700 13px Manrope, sans-serif; }
+    .account-shortcut strong, .account-shortcut small { display: block; overflow: hidden; max-width: 150px; text-overflow: ellipsis; white-space: nowrap; }
+    .account-shortcut strong { font-size: 12px; }
+    .account-shortcut small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .main { grid-column: 2; grid-row: 2; min-width: 0; }
+    .topbar { grid-column: 1 / -1; grid-row: 1; position: sticky; top: 0; z-index: 20; height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 42px; border-bottom: 1px solid var(--navy-light); background: rgba(13, 27, 46, .98); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .profile-chip { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; padding: 5px 8px; border: 0; border-radius: 9px; background: transparent; color: var(--text-white); text-align: left; cursor: pointer; }
+    .profile-chip:hover { background: var(--navy-light); }
+    .profile-chip .avatar { width: 34px; height: 34px; background: var(--navy-light); }
+    .profile-copy strong, .profile-copy small { display: block; white-space: nowrap; }
+    .profile-copy strong { font-size: 11px; }
+    .profile-copy small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .sidebar-account { position: relative; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--navy-light); }
+    .sidebar-account-row { display: flex; align-items: center; gap: 4px; }
+    .profile-menu-toggle { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+    .profile-menu-toggle:hover, .profile-menu-toggle[aria-expanded="true"] { background: var(--navy-light); color: var(--text-white); }
+    .profile-menu-toggle svg { width: 18px; height: 18px; }
+    .profile-menu { position: absolute; z-index: 25; right: 0; bottom: calc(100% + 8px); width: 180px; padding: 6px; border: 1px solid var(--navy-light); border-radius: 10px; background: var(--navy-mid); box-shadow: 0 10px 24px rgba(0, 0, 0, .24); }
+    .profile-menu[hidden] { display: none; }
+    .profile-menu button { width: 100%; padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-white); text-align: left; font-size: 11px; cursor: pointer; }
+    .profile-menu button:hover { background: var(--navy-light); }
+    .sidebar-toggle { width: 37px; height: 37px; display: grid; place-items: center; border: 1px solid var(--navy-light); border-radius: 9px; background: var(--navy-mid); color: var(--text-white); cursor: pointer; transition: background .15s, border-color .15s; }
+    .sidebar-toggle:hover { border-color: var(--green); background: var(--navy-light); color: var(--green); }
+    .sidebar-toggle:focus-visible { outline: 3px solid rgba(62, 207, 94, .35); outline-offset: 2px; }
+    .sidebar-toggle svg { width: 17px; height: 17px; transition: transform .18s ease; }
+    .sidebar-hidden .sidebar-toggle svg { transform: rotate(180deg); }
+    .sidebar-show-toggle { position: fixed; top: 88px; left: 12px; z-index: 30; display: none; }
+    .sidebar-hidden .sidebar-show-toggle { display: grid; }
+    .topbar-note { color: var(--muted); font-size: 12px; }
+    .content { width: min(1320px, 100%); margin: 0 auto; padding: 36px 42px 60px; }
+    .view { display: none; animation: enter .2s ease-out; }
+    .view.active { display: block; }
+    @keyframes enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { font-family: Manrope, sans-serif; }
+    h1 { margin-bottom: 7px; font-size: clamp(26px, 3vw, 34px); letter-spacing: -1.2px; }
+    h2 { margin-bottom: 0; font-size: 17px; letter-spacing: -.35px; }
+    h3 { margin-bottom: 8px; font-size: 14px; }
+    .page-intro { margin-bottom: 25px; }
+    .page-intro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .eyebrow { margin-bottom: 8px; color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; }
+    .card { min-width: 0; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: var(--shadow); }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 19px 21px; border-bottom: 1px solid #eef0f5; }
+    .card-body { padding: 20px 21px; }
+    .text-link { padding: 0; border: 0; background: none; color: var(--green-dark); font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .text-link:hover { text-decoration: underline; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .summary-card { display: flex; align-items: center; gap: 15px; padding: 18px; }
+    .summary-icon { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 12px; color: var(--green); background: var(--green-soft); }
+    .summary-icon.blue { color: var(--navy-mid); background: var(--navy-soft); }
+    .summary-icon.amber { color: var(--green-dark); background: var(--green-soft); }
+    .summary-icon svg { width: 20px; height: 20px; }
+    .summary-label { color: var(--muted); font-size: 11px; }
+    .summary-value { margin-top: 3px; font: 800 22px Manrope, sans-serif; letter-spacing: -.7px; }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr); gap: 18px; align-items: start; }
+    .activity-feed-card { container-type: inline-size; }
+    .activity-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; padding: 17px; }
+    .lane { min-width: 0; padding: 12px; border-radius: 12px; background: #f7f8fb; }
+    .lane-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: #56627a; font-size: 11px; font-weight: 700; }
+    .lane-count { min-width: 21px; padding: 3px 6px; border-radius: 20px; background: #e9edf4; color: #66728a; font-size: 10px; text-align: center; }
+    .lane-items { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 9px; }
+    .activity-tile { width: 100%; min-width: 0; max-width: 100%; padding: 12px; border: 1px solid #e8ebf1; border-radius: 10px; background: #fff; text-align: left; cursor: pointer; transition: .15s ease; }
+    .activity-tile:hover { border-color: #9bd5b2; transform: translateY(-1px); }
+    .activity-tile strong { display: block; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-tile small { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; }
+    .empty-lane { padding: 13px 8px; color: #9aa3b3; font-size: 10px; line-height: 1.5; text-align: center; }
+    .progress-card { padding: 22px; }
+    .progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .progress-top span { color: var(--muted); font-size: 11px; }
+    .progress-number { margin: 22px 0 6px; font: 800 36px Manrope, sans-serif; letter-spacing: -1.6px; }
+    .progress-copy { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .progress-track { height: 8px; margin: 17px 0 12px; overflow: hidden; border-radius: 10px; background: #edf0f5; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--green), var(--green-dark)); transition: width .35s ease; }
+    .progress-foot { display: flex; justify-content: space-between; color: #8a94a6; font-size: 10px; }
+    .subsection { margin-top: 19px; }
+    .subsection-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 12px; }
+    .recent-list { display: grid; }
+    .recent-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eef0f4; }
+    .recent-row:last-child { padding-bottom: 0; border-bottom: 0; }
+    .recent-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--green); }
+    .recent-copy { min-width: 0; flex: 1; }
+    .recent-copy strong { display: block; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .recent-copy small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .recent-score { color: var(--green-dark); font-size: 11px; font-weight: 700; }
+    .empty-state { padding: 28px 18px; color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+    .empty-state strong { display: block; margin-bottom: 5px; color: var(--ink); font: 700 13px Manrope, sans-serif; }
+    .activity-layout { display: grid; grid-template-columns: minmax(240px, .85fr) minmax(0, 1.45fr); gap: 18px; align-items: start; }
+    .activity-list { display: grid; gap: 8px; padding: 12px; }
+    .activity-option { display: flex; align-items: flex-start; gap: 11px; width: 100%; padding: 13px; border: 1px solid transparent; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; }
+    .activity-option:hover { background: #f7f9fc; }
+    .activity-option.selected { border-color: #b8e3c9; background: #f1faf4; }
+    .option-mark { width: 31px; height: 31px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 9px; color: var(--green-dark); background: var(--green-soft); font-size: 12px; font-weight: 700; }
+    .option-main { min-width: 0; flex: 1; }
+    .option-main strong { display: block; font-size: 12px; line-height: 1.45; }
+    .option-main small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .status { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 20px; background: #f0f2f6; color: #68748a; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .status.not-started { background: var(--navy-soft); color: var(--navy-mid); }
+    .status.progress { background: var(--green-soft); color: var(--green-dark); }
+    .status.submitted { background: #fff3dc; color: #8a5a00; }
+    .status.released { background: var(--green-soft); color: var(--green-dark); }
+    .detail-card { min-height: 320px; }
+    .detail-body { padding: 25px; }
+    .detail-title { margin: 0 0 8px; font: 800 22px Manrope, sans-serif; letter-spacing: -.6px; }
+    .detail-description { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .detail-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 17px 0 22px; }
+    .meta-chip { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: #5f6b82; font-size: 11px; }
+    .assignment-note, .result-panel { margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfe; }
+    .assignment-note strong, .result-panel strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .assignment-note p, .result-panel p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .result-panel { border-color: #b8e3c9; background: #f1faf4; }
+    .result-panel .result-score { margin-top: 10px; color: var(--navy); font: 800 23px Manrope, sans-serif; }
+    .result-issues { margin: 9px 0 0; padding-left: 18px; color: #59667d; font-size: 11px; line-height: 1.6; }
+    .activity-status-list { display: grid; gap: 10px; margin-top: 20px; }
+    .activity-status-row { display: flex; justify-content: space-between; gap: 12px; color: #59667d; font-size: 11px; }
+    .activity-status-row strong { color: var(--ink); }
+    .goal-list { display: grid; gap: 9px; padding: 0; list-style: none; }
+    .goal-list li { display: flex; align-items: flex-start; gap: 8px; color: #59667d; font-size: 12px; line-height: 1.5; }
+    .goal-list li::before { content: "✓"; color: var(--green); font-weight: 800; }
+    .primary-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 17px; border: 0; border-radius: 9px; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; transition: .15s ease; }
+    .primary-btn:hover { background: #258d57; transform: translateY(-1px); }
+    .primary-btn:focus-visible, .side-link:focus-visible, .activity-tile:focus-visible, .activity-option:focus-visible, .text-link:focus-visible { outline: 3px solid #9bd5b2; outline-offset: 2px; }
+    .course-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(230px, .8fr); gap: 18px; }
+    .course-activity { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+    .course-activity:last-child { border-bottom: 0; }
+    .course-activity-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+    .course-activity p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .course-activity .goal-list { margin: 12px 0 0; }
+    .goal-list li::before { content: "•"; }
+    .account-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .7fr); gap: 18px; align-items: start; }
+    .account-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .field { min-width: 0; padding: 13px; border: 1px solid #edf0f5; border-radius: 10px; background: #fbfcfe; }
+    .field span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; }
+    .field strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
+    .preview-notice { display: none; margin-bottom: 17px; padding: 12px 15px; border: 1px solid rgba(62, 207, 94, .3); border-radius: 9px; background: var(--green-soft); color: var(--navy); font-size: 12px; }
+
+    @media (max-width: 1040px) {
+      .app { grid-template-columns: 215px minmax(0, 1fr); }
+      .content { padding: 30px 25px 48px; }
+      .topbar { padding: 0 25px; }
+      .overview-grid, .course-summary, .account-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app, .app.sidebar-hidden { display: block; }
+      .sidebar { position: static; height: auto; padding: 13px 15px 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .nav-label { display: none; }
+      .side-nav { display: flex; gap: 6px; overflow-x: auto; }
+      .side-link { justify-content: center; width: auto; flex: 0 0 auto; padding: 9px 11px; font-size: 11px; }
+      .side-link svg { width: 16px; height: 16px; }
+      .sidebar-header { margin-bottom: 8px; }
+      .sidebar-account { margin-top: 14px; }
+      .brand-logo { width: 146px; height: 31px; }
+      .brand-section { font-size: 11px; }
+      .topbar { height: 64px; padding: 0 17px; }
+      .sidebar { top: 64px; }
+      .sidebar-show-toggle { top: 64px; left: 12px; }
+      .content { padding: 25px 16px 42px; }
+      .summary-grid { gap: 9px; }
+      .summary-card { align-items: flex-start; flex-direction: column; gap: 9px; padding: 13px; }
+      .summary-icon { width: 34px; height: 34px; }
+      .summary-value { font-size: 19px; }
+      .activity-board { grid-template-columns: 1fr; padding: 12px; }
+      .lane-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .activity-layout { grid-template-columns: 1fr; }
+      .activity-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .account-fields { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 440px) {
+      .side-link { gap: 6px; padding: 9px; }
+      .side-link svg { display: none; }
+      .topbar { height: auto; min-height: 56px; padding: 8px 12px; gap: 8px; }
+      .brand { gap: 6px; }
+      .brand-logo { width: 116px; height: 26px; }
+      .brand-section { font-size: 9px; }
+      .brand-divider { height: 18px; }
+      .profile-copy, .topbar-note { display: none; }
+      .profile-chip { padding: 2px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .summary-card { flex-direction: row; align-items: center; }
+      .activity-list { grid-template-columns: 1fr; }
+      .lane-items { grid-template-columns: 1fr; }
+      .card-head, .card-body { padding-left: 15px; padding-right: 15px; }
+    }
+    @container (max-width: 760px) {
+      .activity-board { grid-template-columns: minmax(0, 1fr); }
+      .lane-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @container (max-width: 460px) {
+      .lane-items { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand topbar-brand" aria-label="Assembly PC Student Dashboard">
+        <img class="brand-logo" src="assembly-pc-logo.svg" alt="Assembly PC" />
+        <span class="brand-divider" aria-hidden="true"></span>
+        <span class="brand-section">Student Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-note">Design preview · sample content</span>
+      </div>
+    </header>
+    <aside class="sidebar" id="studentSidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Hide sidebar" aria-expanded="true" aria-controls="studentSidebar" title="Hide sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+      </div>
+      <div class="nav-label">Student space</div>
+      <nav class="side-nav" aria-label="Student dashboard">
+        <button class="side-link active" type="button" data-view="overview" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>
+          Overview
+        </button>
+        <button class="side-link" type="button" data-view="activities">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          My activities
+        </button>
+        <button class="side-link" type="button" data-view="results">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Results &amp; feedback
+        </button>
+      </nav>
+      <div class="sidebar-account">
+        <div class="sidebar-account-row">
+          <button class="profile-chip" type="button" data-view="account" aria-label="Open student account">
+            <span class="avatar" data-avatar aria-hidden="true">S</span>
+            <span class="profile-copy"><strong data-user-name>Shirokuma</strong><small>Student account</small></span>
+          </button>
+          <button class="profile-menu-toggle" id="profileMenuToggle" type="button" aria-label="More account options" aria-expanded="false" aria-controls="profileMenu" title="More options">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+          </button>
+        </div>
+        <div class="profile-menu" id="profileMenu" role="menu" hidden>
+          <button type="button" role="menuitem" data-view="account">Profile details</button>
+          <button type="button" role="menuitem" data-preview-message="Settings are not connected in this design preview.">Settings</button>
+          <button type="button" role="menuitem" data-preview-message="Sign out is not connected in this design preview.">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <button class="sidebar-toggle sidebar-show-toggle" id="sidebarShowToggle" type="button" aria-label="Show sidebar" aria-expanded="false" aria-controls="studentSidebar" title="Show sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+
+      <main class="content">
+        <div class="preview-notice" id="prototypeNotice" role="status"></div>
+
+        <section class="view active" id="view-overview" aria-labelledby="overviewTitle">
+          <header class="page-intro">
+            <div class="eyebrow">Student dashboard</div>
+            <h1 id="overviewTitle">Good day, <span data-first-name>Student</span>!</h1>
+            <p>Pick up where you left off and keep building your PC knowledge.</p>
+          </header>
+
+          <div class="summary-grid" aria-label="Your assignment summary">
+            <article class="card summary-card">
+              <span class="summary-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+              <div><div class="summary-label">Assigned activities</div><div class="summary-value" id="assignedCount">—</div></div>
+            </article>
+            <article class="card summary-card">
+              <span class="summary-icon amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+              <div><div class="summary-label">In progress</div><div class="summary-value" id="inProgressCount">—</div></div>
+            </article>
+            <article class="card summary-card">
+              <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+              <div><div class="summary-label">Awaiting review</div><div class="summary-value" id="awaitingReviewCount">—</div></div>
+            </article>
+          </div>
+
+          <div class="overview-grid">
+            <div>
+              <section class="card activity-feed-card" aria-labelledby="activityBoardTitle">
+                <div class="card-head">
+                  <h2 id="activityBoardTitle">My activities</h2>
+                  <button class="text-link" type="button" data-go="activities">View all</button>
+                </div>
+                <div class="activity-board" id="activityBoard"></div>
+              </section>
+              <section class="card subsection" aria-labelledby="recentTitle">
+                <div class="card-head"><h2 id="recentTitle">Submission updates</h2></div>
+                <div class="card-body"><div class="recent-list" id="recentList"></div></div>
+              </section>
+            </div>
+
+            <aside class="card progress-card" aria-labelledby="progressTitle">
+              <div class="progress-top"><h2 id="progressTitle">Assignment status</h2></div>
+              <p class="progress-copy" id="assignmentSummary" style="margin-top:12px;"></p>
+              <div class="activity-status-list" id="activityStatusList"></div>
+              <div class="subsection">
+                <div class="subsection-head"><h3>Next up</h3></div>
+                <div id="nextUp"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-activities" aria-labelledby="activitiesTitle">
+          <header class="page-intro">
+            <div class="eyebrow">Instructor assignments</div>
+            <h1 id="activitiesTitle">My activities</h1>
+            <p>Work on activities assigned to you. Submitted work is reviewed by your instructor before results are released.</p>
+          </header>
+          <div class="activity-layout">
+            <section class="card" aria-label="Assigned activities"><div class="activity-list" id="activityList"></div></section>
+            <section class="card detail-card" id="activityDetail" aria-live="polite"></section>
+          </div>
+        </section>
+
+        <section class="view" id="view-results" aria-labelledby="resultsTitle">
+          <header class="page-intro">
+            <div class="eyebrow">Instructor-reviewed work</div>
+            <h1 id="resultsTitle">Results &amp; feedback</h1>
+            <p>Evaluation results and instructor feedback appear here after they are released.</p>
+          </header>
+          <div class="course-summary">
+            <section class="card" aria-labelledby="awaitingResultsTitle">
+              <div class="card-head"><h2 id="awaitingResultsTitle">Awaiting instructor review</h2></div>
+              <div id="awaitingResults"></div>
+            </section>
+            <section class="card" aria-labelledby="releasedResultsTitle">
+              <div class="card-head"><h2 id="releasedResultsTitle">Released results</h2></div>
+              <div id="releasedResults"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-account" aria-labelledby="accountTitle">
+          <header class="page-intro">
+            <div class="eyebrow">Personal details</div>
+            <h1 id="accountTitle">Account</h1>
+            <p>Your student account information.</p>
+          </header>
+          <div class="account-grid">
+            <section class="card">
+              <div class="card-head"><h2>Profile details</h2></div>
+              <div class="card-body"><div class="account-fields" id="accountFields"></div></div>
+            </section>
+            <aside class="card progress-card">
+              <h2>Privacy &amp; data</h2>
+              <p class="progress-copy" style="margin-top:12px;">This area is reserved for account preferences and privacy controls.</p>
+              <button class="primary-btn" type="button" data-preview-message="Account controls are not connected in this design preview." style="margin-top:17px;">Account settings</button>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const dashboardData = {
+      user: {
+        id: 'preview-student',
+        name: 'Shirokuma',
+        email: 'shirokuma@example.edu',
+        studentId: '20201056',
+      },
+      activities: [
+        {
+          id: 'act-101',
+          title: 'Build a Balanced Gaming PC',
+          description: 'Assemble a gaming PC that meets the instructor’s activity requirements and stays within the assigned budget.',
+          activityType: 'PC build',
+          tier: 'Intermediate',
+          timeLimitMinutes: 30,
+          budget: 1200,
+          className: 'PC Assembly 101 · Section A',
+          objectives: ['Use the component requirements provided in the activity', 'Keep the total build within budget', 'Submit the completed assembly for review'],
+          instructor: { displayName: 'Ms. Rivera' },
+          status: 'inProgress',
+          attemptsAllowed: 1,
+          attemptsUsed: 0,
+          lastSavedAt: '2026-11-20T05:40:00',
+        },
+        {
+          id: 'act-102',
+          title: 'Assemble a School Workstation',
+          description: 'Build a workstation using the component and performance requirements provided by your instructor.',
+          activityType: 'PC build',
+          tier: 'Intermediate',
+          timeLimitMinutes: 25,
+          budget: 900,
+          className: 'PC Assembly 101 · Section A',
+          objectives: ['Select components that meet the activity requirements', 'Submit the completed assembly for evaluation'],
+          instructor: { displayName: 'Ms. Rivera' },
+          status: 'submitted',
+          attemptsAllowed: 1,
+          attemptsUsed: 1,
+          submittedAt: '2026-11-19T10:00:00',
+        },
+        {
+          id: 'act-103',
+          title: 'Memory Upgrade Activity',
+          description: 'Choose memory components that satisfy the requirements configured for this activity.',
+          activityType: 'Component selection',
+          tier: 'Beginner',
+          timeLimitMinutes: 20,
+          className: 'PC Assembly 101 · Section A',
+          objectives: ['Review the motherboard specifications', 'Choose memory that meets the activity requirements'],
+          instructor: { displayName: 'Mr. Santos' },
+          status: 'notStarted',
+          attemptsAllowed: 1,
+          attemptsUsed: 0,
+        },
+        {
+          id: 'act-104',
+          title: 'Create a Home Office PC',
+          description: 'Complete the assigned build and submit it for instructor evaluation.',
+          activityType: 'PC build',
+          tier: 'Intermediate',
+          timeLimitMinutes: 20,
+          budget: 750,
+          className: 'PC Assembly 101 · Section B',
+          objectives: ['Meet the activity’s component requirements', 'Keep the total build within budget'],
+          instructor: { displayName: 'Mr. Santos' },
+          status: 'released',
+          attemptsAllowed: 1,
+          attemptsUsed: 1,
+          submittedAt: '2026-11-15T09:30:00',
+          releasedResult: {
+            compatibilityVerdict: 'Compatible',
+            activityScore: 92,
+            issues: [],
+            feedback: 'Good work meeting the activity requirements. Review the component specifications before your next build.',
+            instructorName: 'Mr. Santos',
+            releasedAt: '2026-11-17T14:00:00',
+          },
+        },
+      ],
+    };
+    let selectedActivityId = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      })[char]);
+    }
+
+    function initials(name) {
+      const parts = String(name || 'Student').trim().split(/\s+/).filter(Boolean);
+      return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'S';
+    }
+
+    function activityStatus(activity) {
+      return activity.status || 'notStarted';
+    }
+
+    function activityStatusLabel(status) {
+      return ({
+        notStarted: 'Not started',
+        inProgress: 'In progress',
+        submitted: 'Submitted · awaiting review',
+        released: 'Results released',
+      })[status] || 'Assigned';
+    }
+
+    function activityGoals(activity) {
+      return Array.isArray(activity.objectives) ? activity.objectives.map((goal) => {
+        if (typeof goal === 'string') return goal;
+        return goal?.title || goal?.name || goal?.description || '';
+      }).filter(Boolean) : [];
+    }
+
+    function formatDate(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime())
+        ? ''
+        : date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    function statusClass(status) {
+      return ({
+        notStarted: 'not-started',
+        inProgress: 'progress',
+        submitted: 'submitted',
+        released: 'released',
+      })[status] || '';
+    }
+
+    function userName() {
+      return dashboardData?.user?.name || 'Student';
+    }
+
+    function setView(name) {
+      hidePreviewNotice();
+      document.querySelectorAll('.view').forEach((view) => view.classList.toggle('active', view.id === `view-${name}`));
+      document.querySelectorAll('.side-link').forEach((button) => {
+        const active = button.dataset.view === name;
+        button.classList.toggle('active', active);
+        if (active) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+    }
+
+    function hidePreviewNotice() {
+      const notice = document.getElementById('prototypeNotice');
+      notice.textContent = '';
+      notice.style.display = 'none';
+    }
+
+    function openActivity(id) {
+      selectedActivityId = String(id);
+      renderActivityList();
+      renderActivityDetail();
+      setView('activities');
+    }
+
+    function beginActivity(id) {
+      const notice = document.getElementById('prototypeNotice');
+      const activity = dashboardData.activities.find((item) => String(item.id) === String(id));
+      notice.textContent = `Design preview only — the simulator for ${activity?.title || 'this activity'} is not connected. In the full experience, you’ll assemble the PC, review your work, and confirm before submitting it for instructor review.`;
+      notice.style.display = 'block';
+    }
+
+    function renderSummary() {
+      const activities = dashboardData.activities || [];
+      const count = (status) => activities.filter((activity) => activityStatus(activity) === status).length;
+      const firstName = userName().trim().split(/\s+/)[0] || 'Student';
+
+      document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = userName(); });
+      document.querySelectorAll('[data-first-name]').forEach((element) => { element.textContent = firstName; });
+      document.querySelectorAll('[data-avatar]').forEach((element) => { element.textContent = initials(userName()); });
+      document.getElementById('assignedCount').textContent = String(activities.length);
+      document.getElementById('inProgressCount').textContent = String(count('inProgress'));
+      document.getElementById('awaitingReviewCount').textContent = String(count('submitted'));
+      document.getElementById('assignmentSummary').textContent = activities.length
+        ? `${activities.length} instructor-assigned ${activities.length === 1 ? 'activity' : 'activities'}`
+        : 'No activities have been assigned yet.';
+      document.getElementById('activityStatusList').innerHTML = [
+        ['Not started', count('notStarted')],
+        ['In progress', count('inProgress')],
+        ['Awaiting review', count('submitted')],
+        ['Results released', count('released')],
+      ].map(([label, total]) => `<div class="activity-status-row"><span>${label}</span><strong>${total}</strong></div>`).join('');
+    }
+
+    function renderActivityBoard() {
+      const board = document.getElementById('activityBoard');
+      const activities = dashboardData.activities || [];
+      const lanes = [
+        { status: 'notStarted', title: 'Not started' },
+        { status: 'inProgress', title: 'In progress' },
+        { status: 'submitted', title: 'Submitted' },
+      ];
+      board.innerHTML = lanes.map((lane) => {
+        const items = activities.filter((activity) => lane.status === 'submitted'
+          ? ['submitted', 'released'].includes(activityStatus(activity))
+          : activityStatus(activity) === lane.status);
+        const tiles = items.length
+          ? items.slice(0, 4).map((activity) => `
+              <button class="activity-tile" type="button" data-open-activity="${escapeHtml(activity.id)}">
+                <strong>${escapeHtml(activity.title)}</strong>
+                <small>${escapeHtml(activityStatusLabel(activityStatus(activity)))}</small>
+              </button>
+            `).join('')
+          : '<div class="empty-lane">Nothing here yet</div>';
+        return `<div class="lane"><div class="lane-head">${lane.title}<span class="lane-count">${items.length}</span></div><div class="lane-items">${tiles}</div></div>`;
+      }).join('');
+
+      const next = activities.find((activity) => activityStatus(activity) === 'inProgress')
+        || activities.find((activity) => activityStatus(activity) === 'notStarted');
+      const nextUp = document.getElementById('nextUp');
+      if (!next) {
+        nextUp.innerHTML = activities.length
+          ? '<div class="empty-state" style="padding:14px 0 0;">All assigned activities have been submitted. Check Results &amp; feedback for updates.</div>'
+          : '<div class="empty-state" style="padding:14px 0 0;">Assigned activities will appear here when your instructor assigns them.</div>';
+      } else {
+        nextUp.innerHTML = `<button class="activity-tile" type="button" data-open-activity="${escapeHtml(next.id)}"><strong>${escapeHtml(next.title)}</strong><small>${activityStatus(next) === 'inProgress' ? 'Continue your saved work' : 'Start assigned activity'}</small></button>`;
+      }
+
+      const recent = document.getElementById('recentList');
+      const submissions = activities.filter((activity) => ['submitted', 'released'].includes(activityStatus(activity))).sort((a, b) => {
+        return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
+      }).slice(0, 4);
+      recent.innerHTML = submissions.length
+        ? submissions.map((activity) => `
+            <div class="recent-row">
+              <span class="recent-dot" aria-hidden="true"></span>
+              <div class="recent-copy"><strong>${escapeHtml(activity.title)}</strong><small>${escapeHtml(activityStatusLabel(activityStatus(activity)))}${activity.submittedAt ? ` · ${escapeHtml(formatDate(activity.submittedAt))}` : ''}</small></div>
+              ${activityStatus(activity) === 'released' ? `<span class="recent-score">${escapeHtml(activity.releasedResult.activityScore)}%</span>` : ''}
+            </div>
+          `).join('')
+        : '<div class="empty-state"><strong>No submissions yet</strong>Submitted activities and review updates will appear here.</div>';
+    }
+
+    function renderActivityList() {
+      const list = document.getElementById('activityList');
+      const activities = dashboardData.activities || [];
+      if (!activities.length) {
+        list.innerHTML = '<div class="empty-state"><strong>No assigned activities yet</strong>Your instructor-assigned activities will appear here.</div>';
+        return;
+      }
+      list.innerHTML = activities.map((activity) => {
+        const status = activityStatus(activity);
+        return `
+          <button class="activity-option${String(activity.id) === selectedActivityId ? ' selected' : ''}" type="button" data-select-activity="${escapeHtml(activity.id)}">
+            <span class="option-mark" aria-hidden="true">${status === 'released' ? '✓' : status === 'submitted' ? '…' : status === 'inProgress' ? '↗' : 'PC'}</span>
+            <span class="option-main"><strong>${escapeHtml(activity.title)}</strong><small>${escapeHtml(activity.className || activity.activityType || 'Assigned activity')}</small></span>
+            <span class="status ${statusClass(status)}">${activityStatusLabel(status)}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderActivityDetail() {
+      const detail = document.getElementById('activityDetail');
+      const activity = (dashboardData.activities || []).find((item) => String(item.id) === selectedActivityId);
+      if (!activity) {
+        detail.innerHTML = '<div class="empty-state"><strong>Select an activity</strong>Choose an assigned activity to review its instructions and status.</div>';
+        return;
+      }
+      const status = activityStatus(activity);
+      const goals = activityGoals(activity);
+      const canStart = status === 'notStarted' || status === 'inProgress';
+      const actionLabel = status === 'inProgress' ? 'Continue activity' : 'Start activity';
+      const metadata = [
+        activity.activityType ? `<span class="meta-chip">${escapeHtml(activity.activityType)}</span>` : '',
+        activity.className ? `<span class="meta-chip">${escapeHtml(activity.className)}</span>` : '',
+        activity.tier ? `<span class="meta-chip">${escapeHtml(activity.tier)}</span>` : '',
+        activity.timeLimitMinutes ? `<span class="meta-chip">${escapeHtml(activity.timeLimitMinutes)} min</span>` : '',
+        activity.budget ? `<span class="meta-chip">Budget ${escapeHtml(Number(activity.budget).toLocaleString())}</span>` : '',
+      ].filter(Boolean).join('');
+      const attemptNote = status === 'submitted' || status === 'released'
+        ? `${activity.attemptsUsed} of ${activity.attemptsAllowed} submission used. Ask your instructor to reopen the activity if another attempt is needed.`
+        : `${activity.attemptsAllowed} submission allowed. Confirm your work before submitting; your instructor can reopen the activity if needed.`;
+      const stateNote = status === 'submitted'
+        ? `<div class="assignment-note"><strong>Awaiting instructor review</strong><p>Submitted ${escapeHtml(formatDateTime(activity.submittedAt))}. Your evaluation and feedback will stay hidden until your instructor releases them.</p></div>`
+        : status === 'inProgress'
+          ? `<div class="assignment-note"><strong>Autosave is on</strong><p>Build changes are saved automatically and restored if your session is interrupted. Last saved ${escapeHtml(formatDateTime(activity.lastSavedAt))}.</p></div>`
+          : '';
+      detail.innerHTML = `
+        <div class="card-head"><span class="status ${statusClass(status)}">${activityStatusLabel(status)}</span>${activity.instructor?.displayName ? `<span class="topbar-note">Assigned by ${escapeHtml(activity.instructor.displayName)}</span>` : ''}</div>
+        <div class="detail-body">
+          <h2 class="detail-title">${escapeHtml(activity.title)}</h2>
+          <p class="detail-description">${escapeHtml(activity.description || 'Complete the PC assembly activity assigned by your instructor.')}</p>
+          <div class="detail-meta">${metadata || '<span class="meta-chip">Assigned activity</span>'}</div>
+          <h3>Activity requirements</h3>
+          ${goals.length ? `<ul class="goal-list">${goals.map((goal) => `<li>${escapeHtml(goal)}</li>`).join('')}</ul>` : '<p class="detail-description">No activity requirements have been added yet.</p>'}
+          <div class="assignment-note"><strong>Submission rule</strong><p>${escapeHtml(attemptNote)}</p></div>
+          ${stateNote}
+          ${status === 'released' ? renderResultPanel(activity) : ''}
+          ${canStart ? `<button class="primary-btn" type="button" data-start-activity="${escapeHtml(activity.id)}">${actionLabel}<span aria-hidden="true">→</span></button>` : ''}
+        </div>
+      `;
+    }
+
+    function renderResultPanel(activity) {
+      const result = activity.releasedResult;
+      if (!result) return '';
+      const issues = Array.isArray(result.issues) && result.issues.length
+        ? `<ul class="result-issues">${result.issues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join('')}</ul>`
+        : '<p>No compatibility issues identified.</p>';
+      return `
+        <section class="result-panel" aria-label="Official released evaluation">
+          <strong>Official evaluation</strong>
+          <p>Compatibility verdict: <b>${escapeHtml(result.compatibilityVerdict)}</b></p>
+          <p style="margin-top:8px;">Confirmed activity requirements score</p>
+          <div class="result-score">${escapeHtml(result.activityScore)}%</div>
+          <strong style="margin-top:12px;">Compatibility details</strong>
+          ${issues}
+          <strong style="margin-top:12px;">Instructor feedback</strong>
+          <p>${escapeHtml(result.feedback || 'No additional feedback was provided.')}</p>
+          <p style="margin-top:10px;">Released by ${escapeHtml(result.instructorName)}${result.releasedAt ? ` · ${escapeHtml(formatDateTime(result.releasedAt))}` : ''}</p>
+        </section>
+      `;
+    }
+
+    function renderResults() {
+      const activities = dashboardData.activities || [];
+      const awaiting = activities.filter((activity) => activityStatus(activity) === 'submitted');
+      const released = activities.filter((activity) => activityStatus(activity) === 'released');
+      const awaitingContainer = document.getElementById('awaitingResults');
+      const releasedContainer = document.getElementById('releasedResults');
+
+      awaitingContainer.innerHTML = awaiting.length
+        ? awaiting.map((activity) => `
+            <article class="course-activity">
+              <div class="course-activity-head">
+                <div><h3>${escapeHtml(activity.title)}</h3><p>Submitted ${escapeHtml(formatDateTime(activity.submittedAt))}</p></div>
+                <span class="status submitted">Awaiting review</span>
+              </div>
+              <p>Your evaluation and instructor feedback will appear after they are released.</p>
+            </article>
+          `).join('')
+        : '<div class="empty-state"><strong>Nothing awaiting review</strong>Submitted activities waiting for your instructor will appear here.</div>';
+
+      releasedContainer.innerHTML = released.length
+        ? released.map((activity) => `
+            <article class="course-activity">
+              <div class="course-activity-head">
+                <div><h3>${escapeHtml(activity.title)}</h3><p>Submitted ${escapeHtml(formatDateTime(activity.submittedAt))}</p></div>
+                <span class="status released">Results released</span>
+              </div>
+              ${renderResultPanel(activity)}
+              <button class="text-link" type="button" data-open-activity="${escapeHtml(activity.id)}" style="margin-top:14px;">View activity details</button>
+            </article>
+          `).join('')
+        : '<div class="empty-state"><strong>No results released yet</strong>Your instructor-released evaluations and feedback will appear here.</div>';
+    }
+
+    function renderAccount() {
+      const user = dashboardData.user || {};
+      const fields = [
+        ['Full name', user.name || 'Student'],
+        ['Email', user.email || 'Not provided'],
+        ['Student ID', user.studentId || 'Not provided'],
+      ];
+      document.getElementById('accountFields').innerHTML = fields.map(([label, value]) => `<div class="field"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    }
+
+    function renderDashboard() {
+      renderSummary();
+      renderActivityBoard();
+      renderResults();
+      renderAccount();
+      const activities = dashboardData.activities || [];
+      if (!activities.some((activity) => String(activity.id) === selectedActivityId)) {
+        selectedActivityId = activities[0] ? String(activities[0].id) : null;
+      }
+      renderActivityList();
+      renderActivityDetail();
+    }
+
+    const appShell = document.querySelector('.app');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarShowToggle = document.getElementById('sidebarShowToggle');
+    function setSidebarHidden(isHidden) {
+      appShell.classList.toggle('sidebar-hidden', isHidden);
+      sidebarToggle.setAttribute('aria-expanded', String(!isHidden));
+      sidebarShowToggle.setAttribute('aria-expanded', String(!isHidden));
+      sidebarToggle.setAttribute('aria-label', isHidden ? 'Show sidebar' : 'Hide sidebar');
+      sidebarShowToggle.setAttribute('aria-label', isHidden ? 'Show sidebar' : 'Hide sidebar');
+      sidebarToggle.title = isHidden ? 'Show sidebar' : 'Hide sidebar';
+      sidebarShowToggle.title = isHidden ? 'Show sidebar' : 'Hide sidebar';
+    }
+    sidebarToggle.addEventListener('click', () => setSidebarHidden(true));
+    sidebarShowToggle.addEventListener('click', () => setSidebarHidden(false));
+
+    const profileMenuToggle = document.getElementById('profileMenuToggle');
+    const profileMenu = document.getElementById('profileMenu');
+    profileMenuToggle.addEventListener('click', () => {
+      const isOpen = profileMenuToggle.getAttribute('aria-expanded') === 'true';
+      profileMenuToggle.setAttribute('aria-expanded', String(!isOpen));
+      profileMenu.hidden = isOpen;
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.sidebar-account')) {
+        profileMenuToggle.setAttribute('aria-expanded', 'false');
+        profileMenu.hidden = true;
+      }
+    });
+
+    document.querySelectorAll('.side-link').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
+    document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => setView(button.dataset.go)));
+    document.addEventListener('click', (event) => {
+      const viewButton = event.target.closest('.profile-chip[data-view], .profile-menu [data-view]');
+      if (viewButton) {
+        setView(viewButton.dataset.view);
+        profileMenuToggle.setAttribute('aria-expanded', 'false');
+        profileMenu.hidden = true;
+        return;
+      }
+      const openButton = event.target.closest('[data-open-activity]');
+      if (openButton) {
+        openActivity(openButton.dataset.openActivity);
+        return;
+      }
+      const selectButton = event.target.closest('[data-select-activity]');
+      if (selectButton) {
+        hidePreviewNotice();
+        selectedActivityId = selectButton.dataset.selectActivity;
+        renderActivityList();
+        renderActivityDetail();
+        return;
+      }
+      const startButton = event.target.closest('[data-start-activity]');
+      if (startButton) beginActivity(startButton.dataset.startActivity);
+      const previewButton = event.target.closest('[data-preview-message]');
+      if (previewButton) {
+        const notice = document.getElementById('prototypeNotice');
+        notice.textContent = previewButton.dataset.previewMessage;
+        notice.style.display = 'block';
+      }
+    });
+
+    renderDashboard();
+  </script>
+</body>
+</html>
