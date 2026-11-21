@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ASSEMBLY PC · 3D Assembly Workstation</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three/three.module.js",
+    "three/addons/": "/vendor/three/addons/"
+  }
+}
+</script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -293,6 +301,7 @@ button,input,select,textarea{min-width:0;font-family:inherit;}
   </div>
 
   <div class="topbar-right">
+    <a href="/student/dashboard" id="btnStudentDashboard" class="btn-sm btn-ghost" style="display:none;">Dashboard</a>
     <a href="/profile" class="btn-sm btn-toplink-green">Profile</a>
     <a href="/logout" class="btn-sm btn-ghost">Logout</a>
 
@@ -536,6 +545,15 @@ button,input,select,textarea{min-width:0;font-family:inherit;}
 
 <script type="module" src="/static/js/sim3d/SimulatorApp.mjs"></script>
 <script>
+  (() => {
+    const btnDashboard = document.getElementById('btnStudentDashboard');
+    let storedRole = null;
+    try { storedRole = sessionStorage.getItem('userRole'); } catch (_) {}
+    if (btnDashboard && (window.AUTH_USER?.role || storedRole) === 'student') {
+      btnDashboard.style.display = 'inline-flex';
+    }
+  })();
+
   const adminComboKeys = new Set();
   document.addEventListener('keydown', (e) => {
     adminComboKeys.add(e.key.toLowerCase());

@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: assemblypc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pc_builder_simulation}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-database}
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-pc_builder_simulation}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: assemblypc-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-pc_builder_simulation}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-database}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 5000
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      ADMIN_SECRET: ${ADMIN_SECRET:-assemblypc-dev-secret-change-me-in-production}
+      SEED_DEMO_ACCOUNTS: ${SEED_DEMO_ACCOUNTS:-true}
+    ports:
+      - "${APP_PORT:-5000}:5000"
+
+volumes:
+  postgres_data:

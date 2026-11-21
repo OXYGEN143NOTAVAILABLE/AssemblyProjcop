@@ -50,6 +50,7 @@
     </a>
     <div class="nav-links">
       <a class="nav-link" href="/">Home</a>
+      <a class="nav-link" id="navDashboardLink" href="/student/dashboard" style="display:none;">Dashboard</a>
       <a class="nav-link active" href="/gallery">Gallery</a>
       <a class="nav-link" href="/simulator">Simulator</a>
       <a class="nav-link" href="/profile">Profile</a>
@@ -161,16 +162,34 @@
     }
 
     async function loadAuth() {
+      const dashLink = document.getElementById('navDashboardLink');
       try {
         const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
         const data = await response.json();
         if (data.user) {
           authBtn.textContent = `Logout`;
           authBtn.href = '/logout';
+          if (dashLink) {
+            if (data.user.role === 'student') {
+              dashLink.href = '/student/dashboard';
+              dashLink.style.display = '';
+            } else if (data.user.role === 'instructor') {
+              dashLink.href = '/instructor';
+              dashLink.style.display = '';
+            } else if (data.user.role === 'admin') {
+              dashLink.href = '/admin';
+              dashLink.style.display = '';
+            } else {
+              dashLink.style.display = 'none';
+            }
+          }
         } else {
           authBtn.href = '/';
+          if (dashLink) dashLink.style.display = 'none';
         }
-      } catch (err) {}
+      } catch (err) {
+        if (dashLink) dashLink.style.display = 'none';
+      }
     }
 
     async function loadGallery() {

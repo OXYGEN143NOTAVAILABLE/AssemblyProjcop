@@ -906,6 +906,10 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         Home
       </a>
+      <a href="/student/dashboard" class="nav-link" id="navDashboardLink" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </a>
       <a href="/simulator" class="nav-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
         Simulator
@@ -1555,7 +1559,29 @@
       renderAuthButton(user);
     }
 
+    function updateDashboardNavLink(user) {
+      const dashLink = document.getElementById('navDashboardLink');
+      if (!dashLink) return;
+      if (!user) {
+        dashLink.style.display = 'none';
+        return;
+      }
+      if (user.role === 'student') {
+        dashLink.href = '/student/dashboard';
+        dashLink.style.display = '';
+      } else if (user.role === 'instructor') {
+        dashLink.href = '/instructor';
+        dashLink.style.display = '';
+      } else if (user.role === 'admin') {
+        dashLink.href = '/admin';
+        dashLink.style.display = '';
+      } else {
+        dashLink.style.display = 'none';
+      }
+    }
+
     function renderAuthButton(user) {
+      updateDashboardNavLink(user);
       const btn = document.getElementById('navAuthBtn');
       if (!btn) return;
       if (!user) {

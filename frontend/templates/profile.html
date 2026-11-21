@@ -975,6 +975,347 @@
 
     .profile-logout-btn svg { width: 15px; height: 15px; }
 
+    /* ── STUDENT CLASSROOMS & INVITATIONS ── */
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    .ptab:focus-visible,
+    .classroom-join-input:focus-visible,
+    .classroom-btn:focus-visible,
+    #joinClassroomSubmitBtn:focus-visible {
+      outline: 3px solid var(--green-dark);
+      outline-offset: 2px;
+    }
+
+    .ptab[aria-selected="true"] {
+      position: relative;
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    .classrooms-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .classroom-card-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .classroom-box-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0d1b2e;
+      margin-bottom: 14px;
+    }
+
+    .classroom-join-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .classroom-field {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .classroom-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .classroom-join-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .classroom-join-input {
+      font: inherit;
+      font-size: max(1rem, 1em);
+      min-height: 48px;
+      padding: 0.65rem 0.9rem;
+      border: 1.5px solid #94a3b8;
+      border-radius: 10px;
+      color: #0d1b2e;
+      background: #ffffff;
+      width: 100%;
+      max-width: 320px;
+      text-transform: uppercase;
+    }
+
+    .classroom-field-error {
+      display: none;
+      color: #b91c1c;
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .classroom-join-input:is(:user-invalid, .user-invalid-fallback, .is-invalid) {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+
+    .classroom-field[data-invalid="true"] .classroom-field-error,
+    .classroom-join-row:has(.classroom-join-input:is(:user-invalid, .user-invalid-fallback, .is-invalid)) ~ .classroom-field-error {
+      display: block;
+    }
+
+    .classroom-hint {
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .classroom-feedback {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .classroom-feedback--success {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+
+    .classroom-feedback--error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .classroom-invite-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .classroom-invite-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fafbfc;
+    }
+
+    .classroom-invite-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .classroom-invite-name {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0d1b2e;
+    }
+
+    .classroom-invite-sub {
+      font-size: 13px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .classroom-code-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .classroom-invite-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .classroom-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+
+    .classroom-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .classroom-btn-accept {
+      background: var(--green-dark);
+      color: #ffffff;
+      border: none;
+    }
+
+    .classroom-btn-accept:hover:not(:disabled) {
+      background: #218838;
+    }
+
+    .classroom-btn-decline {
+      background: #ffffff;
+      color: #b91c1c;
+      border: 1.5px solid #fecaca;
+    }
+
+    .classroom-btn-decline:hover:not(:disabled) {
+      background: #fef2f2;
+      border-color: #f87171;
+    }
+
+    .classroom-activities-list {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .classroom-activity-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .classroom-activity-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1 1 160px;
+    }
+
+    .classroom-activity-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .classroom-activity-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .classroom-activity-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .classroom-activity-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .classroom-activity-badge.is-submitted {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .classroom-activity-badge.is-locked {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .classroom-activity-badge.is-assigned {
+      background: #eef2f6;
+      color: var(--navy);
+      border: 1px solid #cbd5e1;
+    }
+
+    .classroom-activity-launch-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 13px;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #ffffff;
+      text-decoration: none;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .classroom-activity-launch-btn:hover {
+      background: var(--green-dark);
+      color: #ffffff;
+    }
+
+    .classroom-activity-launch-btn:focus-visible {
+      outline: 3px solid var(--green-dark);
+      outline-offset: 2px;
+    }
+
     @media (max-width: 900px) {
       nav { height: auto; min-height: 64px; padding: 10px 20px; gap: 10px; flex-wrap: wrap; }
       .nav-links { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
@@ -1005,8 +1346,8 @@
       .stat-item { padding: 12px 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
       .stat-item:first-child { padding-left: 0; }
       .stat-item:last-child { border-bottom: none; padding-right: 0; }
-      .profile-tabs-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px; overflow: visible; }
-      .ptab { justify-content: center; padding: 12px 8px; font-size: 12px; }
+      .profile-tabs-inner { display: flex; gap: 0; padding: 0 12px; overflow-x: auto; flex-wrap: nowrap; }
+      .ptab { flex: none; justify-content: center; padding: 12px 14px; font-size: 13px; white-space: nowrap; }
       .profile-content { padding: 22px 16px 48px; }
       .section-title-row { flex-direction: column; align-items: stretch; gap: 12px; }
       .section-action, .section-action-ghost { justify-content: center; width: 100%; }
@@ -1040,6 +1381,10 @@
       <a href="/" class="nav-link">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         Home
+      </a>
+      <a href="/student/dashboard" class="nav-link" id="studentDashboardNav" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
       </a>
       <a href="/simulator" class="nav-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
@@ -1105,20 +1450,25 @@
 
     <!-- ── TABS BAR ── -->
     <div class="profile-tabs-bar">
-      <div class="profile-tabs-inner">
-        <button class="ptab active" onclick="switchTab('overview', this)">
+      <div class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
+        <button type="button" role="tab" aria-selected="true" class="ptab active" id="overviewTabBtn" onclick="switchTab('overview', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
           Overview
         </button>
-        <button class="ptab" id="buildTabBtn" onclick="switchTab('builds', this)">
+        <button type="button" role="tab" aria-selected="false" class="ptab" id="classroomsTabBtn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Classrooms
+          <span class="ptab-count" id="classroomsInviteBadge" style="display:none;">0</span>
+        </button>
+        <button type="button" role="tab" aria-selected="false" class="ptab" id="buildTabBtn" onclick="switchTab('builds', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span id="buildTabLabel">My Builds</span>
         </button>
-        <button class="ptab" id="favoritesTabBtn" onclick="switchTab('favorites', this)">
+        <button type="button" role="tab" aria-selected="false" class="ptab" id="favoritesTabBtn" onclick="switchTab('favorites', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           Favorites
         </button>
-        <button class="ptab" id="scenarioTabBtn" onclick="switchTab('scenarios', this)" style="display:none;">
+        <button type="button" role="tab" aria-selected="false" class="ptab" id="scenarioTabBtn" onclick="switchTab('scenarios', this)" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Scenarios
         </button>
@@ -1129,7 +1479,7 @@
     <div class="profile-content">
 
       <!-- OVERVIEW TAB -->
-      <div id="tab-overview" class="tab-panel active">
+      <div id="tab-overview" class="tab-panel active" role="tabpanel" aria-labelledby="overviewTabBtn">
         <div class="overview-layout">
           <!-- Activity Feed -->
           <div>
@@ -1183,8 +1533,69 @@
         </div>
       </div>
 
+      <!-- CLASSROOMS TAB (Students) -->
+      <div id="tab-classrooms" class="tab-panel" role="tabpanel" aria-labelledby="classroomsTabBtn">
+        <div class="classrooms-stack">
+          <div class="classroom-card-box">
+            <h3 class="classroom-box-title" id="join-classroom-heading">Join a Classroom</h3>
+            <form id="joinClassroomForm" class="classroom-join-form" method="POST" action="/api/student/classrooms/join" aria-labelledby="join-classroom-heading" novalidate>
+              <div class="classroom-field">
+                <label for="classroom-join-code-input">Classroom Join Code <span aria-hidden="true">*</span></label>
+                <div class="classroom-join-row">
+                  <input
+                    id="classroom-join-code-input"
+                    class="classroom-join-input"
+                    name="joinCode"
+                    type="text"
+                    required
+                    minlength="4"
+                    maxlength="32"
+                    placeholder="e.g. APC-7K4M"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    enterkeyhint="done"
+                    aria-invalid="false"
+                    aria-describedby="classroom-join-help"
+                    data-error="classroom-join-field-error"
+                  />
+                  <button type="submit" id="joinClassroomSubmitBtn" class="section-action" style="min-height:48px;">
+                    Join Classroom
+                  </button>
+                </div>
+                <span id="classroom-join-field-error" class="classroom-field-error">
+                  Please enter a valid classroom join code (4 to 32 characters).
+                </span>
+                <p id="classroom-join-help" class="classroom-hint">
+                  Enter the code shared by your instructor (for example, APC-7K4M).
+                </p>
+              </div>
+              <div id="classroomFeedback" role="status" aria-live="polite" class="classroom-feedback" hidden></div>
+            </form>
+          </div>
+
+          <div class="classroom-card-box">
+            <h3 class="classroom-box-title">Pending Invitations</h3>
+            <div id="studentInvitationsList" class="classroom-invite-list"></div>
+          </div>
+
+          <div>
+            <div class="section-title-row">
+              <div class="section-title">
+                <div class="section-title-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <span>My Classrooms</span>
+              </div>
+            </div>
+            <div id="studentClassroomsGrid" class="builds-grid"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- MY BUILDS TAB -->
-      <div id="tab-builds" class="tab-panel">
+      <div id="tab-builds" class="tab-panel" role="tabpanel" aria-labelledby="buildTabBtn">
         <div class="section-title-row">
           <div class="section-title">
             <div class="section-title-icon">
@@ -1203,7 +1614,7 @@
       </div>
 
       <!-- SCENARIOS TAB -->
-      <div id="tab-scenarios" class="tab-panel">
+      <div id="tab-scenarios" class="tab-panel" role="tabpanel" aria-labelledby="scenarioTabBtn">
         <div class="section-title-row">
           <div class="section-title">
             <div class="section-title-icon">
@@ -1220,7 +1631,7 @@
       </div>
 
       <!-- FAVORITES TAB -->
-      <div id="tab-favorites" class="tab-panel">
+      <div id="tab-favorites" class="tab-panel" role="tabpanel" aria-labelledby="favoritesTabBtn">
         <div class="section-title-row">
           <div class="section-title">
             <div class="section-title-icon">
@@ -1228,7 +1639,7 @@
             </div>
             Saved from Gallery
           </div>
-          <a href="#" class="section-action-ghost">
+          <a href="/gallery" class="section-action-ghost">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
             Browse Gallery
           </a>
@@ -1240,7 +1651,7 @@
           </div>
           <h3>No favorites yet</h3>
           <p>Browse the community gallery and heart builds you love to save them here.</p>
-          <a href="#" class="section-action-ghost" style="display:inline-flex;">
+          <a href="/gallery" class="section-action-ghost" style="display:inline-flex;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
             Browse Gallery
           </a>
@@ -1505,6 +1916,7 @@
         renderFavoritesTab();
         renderBadgesWidget();
         renderScenariosTab();
+        await initStudentClassroomsTab();
         showPublicBuildsFirst();
         
       } catch (error) {
@@ -1654,6 +2066,10 @@
       }
       const scenarioTab = document.getElementById('scenarioTabBtn');
       if (scenarioTab) scenarioTab.style.display = user.role === 'instructor' ? '' : 'none';
+      const classroomsTab = document.getElementById('classroomsTabBtn');
+      if (classroomsTab) classroomsTab.style.display = (isOwnProfile && user.role === 'student') ? '' : 'none';
+      const studentDashboardNav = document.getElementById('studentDashboardNav');
+      if (studentDashboardNav) studentDashboardNav.style.display = (isOwnProfile && user.role === 'student') ? '' : 'none';
       const newScenarioAction = document.getElementById('newScenarioAction');
       if (newScenarioAction) newScenarioAction.style.display = isOwnProfile ? 'inline-flex' : 'none';
       const favoritesTab = document.getElementById('favoritesTabBtn');
@@ -1844,11 +2260,349 @@
 
     function switchTab(name, btn) {
       // deactivate all tabs
-      document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ptab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       // activate selected
-      btn.classList.add('active');
-      document.getElementById('tab-' + name).classList.add('active');
+      if (btn) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        if (typeof btn.scrollIntoView === 'function') {
+          btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+      }
+      const panel = document.getElementById('tab-' + name);
+      if (panel) panel.classList.add('active');
+    }
+
+    function extractApiError(data, fallback) {
+      if (!data) return fallback;
+      if (typeof data.error === 'string' && data.error) return data.error;
+      if (data.detail && typeof data.detail === 'object' && data.detail.error) {
+        return data.detail.error;
+      }
+      if (typeof data.detail === 'string' && data.detail) return data.detail;
+      return fallback;
+    }
+
+    function setClassroomFeedback(message, kind = 'success') {
+      const box = document.getElementById('classroomFeedback');
+      if (!box) return;
+      if (!message) {
+        box.hidden = true;
+        box.textContent = '';
+        box.className = 'classroom-feedback';
+        return;
+      }
+      box.hidden = false;
+      box.className = `classroom-feedback classroom-feedback--${kind === 'error' ? 'error' : 'success'}`;
+      box.textContent = message;
+    }
+
+    function linkJoinError(input, shown) {
+      if (!input) return;
+      const errorId = input.dataset.error;
+      if (!errorId) return;
+      const ids = (input.getAttribute('aria-describedby') || '')
+        .split(/\s+/)
+        .filter(id => id && id !== errorId);
+      if (shown) ids.push(errorId);
+      if (ids.length) input.setAttribute('aria-describedby', ids.join(' '));
+      else input.removeAttribute('aria-describedby');
+    }
+
+    const joinFieldFlagged = new WeakSet();
+
+    function syncJoinInputAria(input, showError = false) {
+      if (!input) return true;
+      const fieldWrap = input.closest('.classroom-field');
+      const trimmed = input.value.trim();
+      const validLength = trimmed.length >= 4 && trimmed.length <= 32;
+      const nativeUserInvalid = CSS.supports('selector(:user-invalid)') && input.matches(':user-invalid');
+      const isInvalid = !validLength && (showError || nativeUserInvalid || joinFieldFlagged.has(input));
+
+      if (isInvalid) {
+        input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+        if (fieldWrap) fieldWrap.setAttribute('data-invalid', 'true');
+        linkJoinError(input, true);
+        joinFieldFlagged.add(input);
+        return false;
+      }
+
+      input.classList.remove('is-invalid');
+      input.setAttribute('aria-invalid', 'false');
+      if (fieldWrap) fieldWrap.removeAttribute('data-invalid');
+      linkJoinError(input, false);
+      if (validLength) joinFieldFlagged.delete(input);
+      return validLength;
+    }
+
+    function renderStudentInvitations(invitations) {
+      const container = document.getElementById('studentInvitationsList');
+      const badge = document.getElementById('classroomsInviteBadge');
+      const list = Array.isArray(invitations) ? invitations : [];
+
+      if (badge) {
+        if (list.length > 0) {
+          badge.textContent = String(list.length);
+          badge.style.display = '';
+        } else {
+          badge.style.display = 'none';
+          badge.textContent = '0';
+        }
+      }
+
+      if (!container) return;
+      if (!list.length) {
+        container.innerHTML = '<div class="classroom-hint">No pending classroom invitations right now.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(inv => `
+        <div class="classroom-invite-item" data-invitation-id="${escapeHtml(inv.id)}">
+          <div class="classroom-invite-meta">
+            <div class="classroom-invite-name">${escapeHtml(inv.classroomDisplayName || inv.classroomName || 'Classroom')}</div>
+            <div class="classroom-invite-sub">
+              <span>Instructor: <strong>${escapeHtml(inv.instructorName || 'Instructor')}</strong></span>
+              <span class="classroom-code-pill">${escapeHtml(inv.joinCode || '')}</span>
+            </div>
+          </div>
+          <div class="classroom-invite-actions">
+            <button type="button" class="classroom-btn classroom-btn-accept" data-invitation-action="accept" data-invitation-id="${escapeHtml(inv.id)}">
+              Accept
+            </button>
+            <button type="button" class="classroom-btn classroom-btn-decline" data-invitation-action="decline" data-invitation-id="${escapeHtml(inv.id)}">
+              Decline
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStudentClassrooms(classrooms) {
+      const grid = document.getElementById('studentClassroomsGrid');
+      if (!grid) return;
+      const list = Array.isArray(classrooms) ? classrooms : [];
+      if (!list.length) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1;">
+            <h3>No classrooms joined yet</h3>
+            <p>Ask your instructor for a join code or accept an invitation above.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const colors = ['thumb-green', 'thumb-blue', 'thumb-teal', 'thumb-purple', 'thumb-amber'];
+      grid.innerHTML = list.map((cls, idx) => {
+        const colorClass = colors[idx % colors.length];
+        const activities = Array.isArray(cls.activities) ? cls.activities : [];
+        const actCount = cls.activitiesCount !== undefined && cls.activitiesCount !== null
+          ? Number(cls.activitiesCount)
+          : activities.length;
+
+        const activitiesHtml = activities.length
+          ? `<div class="classroom-activities-list">${activities.map((act) => {
+              let dueText = [act.dueDateValue, act.dueTimeValue].filter(Boolean).join(' ').trim();
+              if (!dueText && act.dueAt) {
+                const parsedDue = new Date(act.dueAt);
+                dueText = Number.isNaN(parsedDue.getTime()) ? String(act.dueAt) : parsedDue.toLocaleString();
+              }
+              const hasScore = Boolean(act.isSubmitted) && act.score !== null && act.score !== undefined;
+              let statusBadge = '<span class="classroom-activity-badge is-assigned">Assigned</span>';
+              if (hasScore) {
+                statusBadge = `<span class="classroom-activity-badge is-submitted">Submitted · ${escapeHtml(act.score)}/100</span>`;
+              } else if (act.isLocked) {
+                statusBadge = '<span class="classroom-activity-badge is-locked">Locked</span>';
+              }
+              const actionHtml = act.isLocked
+                ? '<span class="classroom-activity-badge is-locked" aria-disabled="true">Locked</span>'
+                : `<a href="/simulator?activity=${encodeURIComponent(act.id ?? '')}" class="classroom-activity-launch-btn">${act.isSubmitted ? 'Re-open Lab' : 'Launch Activity'}</a>`;
+
+              return `
+                <div class="classroom-activity-item">
+                  <div class="classroom-activity-info">
+                    <div class="classroom-activity-title">${escapeHtml(act.activityName || 'Untitled Activity')}</div>
+                    <div class="classroom-activity-meta">
+                      <span>${dueText ? 'Due: ' + escapeHtml(dueText) : 'No due date'}</span>
+                      ${statusBadge}
+                    </div>
+                  </div>
+                  <div class="classroom-activity-actions">
+                    ${actionHtml}
+                  </div>
+                </div>
+              `;
+            }).join('')}</div>`
+          : '<div class="classroom-hint" style="margin-top:12px;">No activities scheduled yet.</div>';
+
+        return `
+          <div class="build-card" style="cursor:default;display:flex;flex-direction:column;">
+            <div class="build-thumb ${colorClass}">
+              <div class="thumb-glow"></div>
+              <div class="build-thumb-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="build-badge badge-published">Enrolled</div>
+            </div>
+            <div class="build-card-body" style="flex:1;">
+              <div class="build-card-title">${escapeHtml(cls.displayName || cls.name || 'Classroom')}</div>
+              <div class="build-card-desc">Instructor: ${escapeHtml(cls.instructorName || 'Instructor')}</div>
+              <div class="build-card-meta">
+                <span class="classroom-code-pill">${escapeHtml(cls.joinCode || '')}</span>
+                <div class="build-meta-item">${actCount} ${actCount === 1 ? 'activity' : 'activities'}</div>
+              </div>
+              ${activitiesHtml}
+            </div>
+            <div class="build-card-footer">
+              <div class="build-likes">${cls.enrolledAt ? 'Joined ' + new Date(cls.enrolledAt).toLocaleDateString() : 'Active member'}</div>
+              <a href="/simulator" class="build-edit-btn" style="width:auto;padding:0 12px;gap:6px;text-decoration:none;font-size:12px;font-weight:600;">Open Simulator</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadStudentClassroomsData() {
+      try {
+        const ts = Date.now();
+        const [classroomsRes, invitationsRes] = await Promise.all([
+          fetch(`/api/student/classrooms?cache=${ts}`, { credentials: 'same-origin' }),
+          fetch(`/api/student/invitations?cache=${ts}`, { credentials: 'same-origin' }),
+        ]);
+        const classroomsData = classroomsRes.ok ? await classroomsRes.json() : { classrooms: [] };
+        const invitationsData = invitationsRes.ok ? await invitationsRes.json() : { invitations: [] };
+        renderStudentInvitations(invitationsData.invitations || []);
+        renderStudentClassrooms(classroomsData.classrooms || []);
+      } catch (err) {
+        setClassroomFeedback('Could not load your classrooms right now.', 'error');
+      }
+    }
+
+    let studentClassroomsBound = false;
+
+    function bindStudentClassroomsEvents() {
+      if (studentClassroomsBound) return;
+      studentClassroomsBound = true;
+
+      const classroomsTabBtn = document.getElementById('classroomsTabBtn');
+      if (classroomsTabBtn) {
+        classroomsTabBtn.addEventListener('click', () => switchTab('classrooms', classroomsTabBtn));
+      }
+
+      const joinForm = document.getElementById('joinClassroomForm');
+      const joinInput = document.getElementById('classroom-join-code-input');
+      const joinSubmitBtn = document.getElementById('joinClassroomSubmitBtn');
+
+      if (joinInput) {
+        joinInput.setAttribute('aria-invalid', 'false');
+        joinInput.addEventListener('blur', () => {
+          if (joinInput.value.trim() !== '') {
+            syncJoinInputAria(joinInput, true);
+          }
+        });
+        joinInput.addEventListener('input', () => {
+          if (joinFieldFlagged.has(joinInput) || joinInput.getAttribute('aria-invalid') === 'true') {
+            syncJoinInputAria(joinInput, false);
+          }
+        });
+      }
+
+      if (joinForm && joinInput && joinSubmitBtn) {
+        joinForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const code = joinInput.value.trim().toUpperCase();
+          joinInput.value = code;
+          if (!syncJoinInputAria(joinInput, true)) {
+            joinInput.focus();
+            return;
+          }
+
+          setClassroomFeedback('');
+          joinSubmitBtn.disabled = true;
+          try {
+            const response = await fetch('/api/student/classrooms/join', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ joinCode: code }),
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+              setClassroomFeedback(extractApiError(data, 'Could not join classroom with that code.'), 'error');
+              return;
+            }
+            const joinedName = data?.classroom?.displayName || data?.classroom?.name || 'classroom';
+            joinForm.reset();
+            joinFieldFlagged.delete(joinInput);
+            syncJoinInputAria(joinInput, false);
+            setClassroomFeedback(`Joined "${joinedName}" successfully.`, 'success');
+            await loadStudentClassroomsData();
+          } catch (err) {
+            setClassroomFeedback('Network error while joining classroom.', 'error');
+          } finally {
+            joinSubmitBtn.disabled = false;
+          }
+        });
+      }
+
+      const invitationsList = document.getElementById('studentInvitationsList');
+      if (invitationsList) {
+        invitationsList.addEventListener('click', async (e) => {
+          const btn = e.target.closest('[data-invitation-action]');
+          if (!btn) return;
+          const invitationId = btn.dataset.invitationId;
+          const action = btn.dataset.invitationAction;
+          if (!invitationId || !action) return;
+
+          const row = btn.closest('.classroom-invite-item');
+          const rowButtons = row ? row.querySelectorAll('button') : [btn];
+          rowButtons.forEach(b => { b.disabled = true; });
+          setClassroomFeedback('');
+
+          try {
+            const response = await fetch(`/api/student/invitations/${encodeURIComponent(invitationId)}/respond`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ action }),
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+              setClassroomFeedback(extractApiError(data, 'Could not update invitation.'), 'error');
+              rowButtons.forEach(b => { b.disabled = false; });
+              return;
+            }
+            setClassroomFeedback(
+              action === 'accept' ? 'Invitation accepted! You are now enrolled.' : 'Invitation declined.',
+              'success'
+            );
+            await loadStudentClassroomsData();
+          } catch (err) {
+            setClassroomFeedback('Network error while responding to invitation.', 'error');
+            rowButtons.forEach(b => { b.disabled = false; });
+          }
+        });
+      }
+    }
+
+    async function initStudentClassroomsTab() {
+      const user = profileData?.user || {};
+      const isOwnStudent = profileData?.isOwnProfile !== false && user.role === 'student';
+      const classroomsTabBtn = document.getElementById('classroomsTabBtn');
+      if (!isOwnStudent) {
+        if (classroomsTabBtn) classroomsTabBtn.style.display = 'none';
+        return;
+      }
+      if (classroomsTabBtn) classroomsTabBtn.style.display = '';
+      bindStudentClassroomsEvents();
+      await loadStudentClassroomsData();
+      if (new URLSearchParams(window.location.search).get('tab') === 'classrooms' && classroomsTabBtn) {
+        switchTab('classrooms', classroomsTabBtn);
+      }
     }
 
     // Animate skill bars on load

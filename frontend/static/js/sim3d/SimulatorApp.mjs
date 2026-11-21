@@ -138,6 +138,81 @@ function escapeHtml(val) {
   ));
 }
 
+const WORKSTATION_SCENARIO_FALLBACKS = {
+  'fault lab 1: no-post & inverted airflow rig': {
+    faultLabId: 'fault_no_post_orientation',
+    activityType: 'troubleshoot',
+    tier: 'Intermediate',
+    description:
+      TROUBLESHOOTING_PRESETS.find((p) => p.id === 'fault_no_post_orientation')?.description ||
+      'Diagnose why this workstation fails POST & thermal checks: inspect CPU orientation, thermal paste, PSU/Case fan orientation, and GPU power cabling.',
+    objectives:
+      TROUBLESHOOTING_PRESETS.find((p) => p.id === 'fault_no_post_orientation')?.objectives || [
+        { id: 'fl1_cpu', text: 'Re-orient rotated CPU Pin-1 corner, apply thermal paste, and latch ILM lever' },
+        { id: 'fl1_airflow', text: 'Flip upside-down PSU (fan down) and backward rear Case Fan' },
+        { id: 'fl1_cables', text: 'Connect missing PCIe GPU power and Case Fan cables, then pass POST' },
+      ],
+  },
+  'fault lab 2: memory conflict & unplugged rails': {
+    faultLabId: 'fault_memory_power_mismatch',
+    activityType: 'troubleshoot',
+    tier: 'Intermediate',
+    description:
+      TROUBLESHOOTING_PRESETS.find((p) => p.id === 'fault_memory_power_mismatch')?.description ||
+      'This workstation halts at boot with memory and power faults. Swap out incompatible RAM, re-fasten unlatched components, and connect missing motherboard cables.',
+    objectives:
+      TROUBLESHOOTING_PRESETS.find((p) => p.id === 'fault_memory_power_mismatch')?.objectives || [
+        { id: 'fl2_ram', text: 'Replace DDR3 RAM with compatible DDR4 memory and secure DIMM latches' },
+        { id: 'fl2_power', text: 'Fasten PSU, connect 8-pin CPU_PWR1, CPU_FAN1, PCIE_PWR, and SATA6G_1 data' },
+        { id: 'fl2_post', text: 'Verify clean UEFI BIOS POST & pass Final Assembly Validation' },
+      ],
+  },
+  'am5 ddr5 workstation build': {
+    faultLabId: null,
+    activityType: 'build',
+    tier: 'High End',
+    description: 'Assemble a compatible AM5 DDR5 PC with NVMe storage and an RTX 4070.',
+    objectives: [
+      'Match AM5 CPU and motherboard',
+      'Select DDR5 memory',
+      'Use an M.2 NVMe SSD',
+      'Provide 700W+ PSU capacity',
+    ],
+  },
+  'entry lga1700 lab pc': {
+    faultLabId: null,
+    activityType: 'build',
+    tier: 'Entry',
+    description: 'Configure an entry-level LGA1700 DDR4 system suitable for classroom workstations.',
+    objectives: [
+      'Select Core i5-12400',
+      'Pair with DDR4 motherboard and RAM',
+      'Verify 450W+ PSU',
+    ],
+  },
+};
+
+function resolveWorkstationFallback(activityName) {
+  const key = String(activityName || '').trim().toLowerCase();
+  if (!key) return null;
+  if (WORKSTATION_SCENARIO_FALLBACKS[key]) {
+    return WORKSTATION_SCENARIO_FALLBACKS[key];
+  }
+  if (key.includes('fault lab 1') || key.includes('no-post')) {
+    return WORKSTATION_SCENARIO_FALLBACKS['fault lab 1: no-post & inverted airflow rig'];
+  }
+  if (key.includes('fault lab 2') || key.includes('memory conflict')) {
+    return WORKSTATION_SCENARIO_FALLBACKS['fault lab 2: memory conflict & unplugged rails'];
+  }
+  if (key.includes('am5 ddr5')) {
+    return WORKSTATION_SCENARIO_FALLBACKS['am5 ddr5 workstation build'];
+  }
+  if (key.includes('lga1700')) {
+    return WORKSTATION_SCENARIO_FALLBACKS['entry lga1700 lab pc'];
+  }
+  return null;
+}
+
 class SimulatorApp {
   constructor() {
     this.userRole = sessionStorage.getItem('userRole') || 'guest';
@@ -146,6 +221,9 @@ class SimulatorApp {
     const params = new URLSearchParams(window.location.search);
     this.galleryBuildId = params.get('build');
     this.scenarioId = params.get('scenario');
+    this.classroomActivityId = params.get('activity');
+    this.classroomActivity = null;
+    this.studentAssignedActivities = [];
     this.readOnly = Boolean(
       this.galleryBuildId &&
       ['1', 'true', 'yes'].includes(String(params.get('readonly') || '').toLowerCase())
@@ -192,7 +270,9 @@ class SimulatorApp {
     this._syncMuteUi();
     this._syncPortsToggleUi();
 
-    if (this.scenarioId) {
+    if (this.classroomActivityId) {
+      await this._loadClassroomActivityFromUrl(this.classroomActivityId);
+    } else if (this.scenarioId) {
       await this._loadScenarioFromUrl(this.scenarioId);
     }
     if (this.galleryBuildId) {
@@ -200,6 +280,10 @@ class SimulatorApp {
     }
 
     this.renderAllUi();
+
+    if (this.userRole === 'student' || this.classroomActivity) {
+      this._loadStudentAssignedActivities();
+    }
 
     if (new URLSearchParams(window.location.search).get('newScenario') === '1') {
       if (this.userRole === 'teacher' || this.userRole === 'instructor') {
@@ -213,7 +297,12 @@ class SimulatorApp {
     const tabScenario = document.getElementById('tabScenario');
     const isInstructor = this.userRole === 'teacher' || this.userRole === 'instructor';
     if (btnScenario) btnScenario.style.display = isInstructor ? 'inline-flex' : 'none';
-    if (tabScenario) tabScenario.style.display = isInstructor || this.scenarioId ? 'block' : 'none';
+    if (tabScenario) {
+      tabScenario.style.display =
+        isInstructor || this.scenarioId || this.classroomActivityId || this.classroomActivity || this.studentAssignedActivities.length > 0
+          ? 'block'
+          : 'none';
+    }
   }
 
   _init3dViewport() {
@@ -1178,9 +1267,19 @@ class SimulatorApp {
       </div>
     `;
 
+    const modalSub = this.classroomActivity
+      ? `${this.classroomActivity.className} — ${this.classroomActivity.activityName}`
+      : (this.dataMgr.activity?.title || 'PC Assembly Assessment');
+    const isClassroomLocked = Boolean(this.classroomActivity?.isLocked);
+    const submitBtnLabel = isClassroomLocked
+      ? 'Activity Locked by Instructor'
+      : this.classroomActivity
+        ? 'Save & Submit Classroom Activity'
+        : (this.scenarioId ? 'Save & Submit Activity' : 'Save Build to Gallery');
+
     document.getElementById('submitContent').innerHTML = `
       <div class="modal-title">Post-Assembly Validation Report</div>
-      <div class="modal-sub">${escapeHtml(this.dataMgr.activity?.title || 'PC Assembly Assessment')}</div>
+      <div class="modal-sub">${escapeHtml(modalSub)}</div>
 
       <div class="grade-box">
         <div class="grade-summary">
@@ -1237,8 +1336,8 @@ class SimulatorApp {
       </div>
 
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn-sm btn-green" id="btnSubmitSaveBuild" style="flex:1;justify-content:center;padding:10px;">
-          ${this.scenarioId ? 'Save & Submit Activity' : 'Save Build to Gallery'}
+        <button class="btn-sm btn-green" id="btnSubmitSaveBuild" style="flex:1;justify-content:center;padding:10px;${isClassroomLocked ? 'opacity:0.6;cursor:not-allowed;' : ''}" ${isClassroomLocked ? 'disabled' : ''}>
+          ${escapeHtml(submitBtnLabel)}
         </button>
         <button class="btn-sm btn-ghost" id="btnSubmitClose" style="padding:10px 16px;">Close</button>
       </div>
@@ -1254,13 +1353,69 @@ class SimulatorApp {
   }
 
   async _submitAndPersist(report) {
+    if (this.classroomActivity?.isLocked) {
+      this.showToast('This classroom activity is locked by your instructor.', 'warn');
+      return;
+    }
+
+    const defaultBtnText = this.classroomActivity
+      ? 'Save & Submit Classroom Activity'
+      : (this.scenarioId ? 'Save & Submit Activity' : 'Save Build to Gallery');
     const btn = document.getElementById('btnSubmitSaveBuild');
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Saving...';
     }
+
     const buildId = await this.saveCurrentBuild(report);
-    if (buildId && this.scenarioId) {
+    if (!buildId) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = defaultBtnText;
+      }
+      return;
+    }
+
+    const numericScore = Math.max(0, Math.min(100, Math.round(Number(report.score || 0))));
+    const parsedBuildId = Number(buildId);
+    const submitBuildId = Number.isInteger(parsedBuildId) && parsedBuildId > 0 ? parsedBuildId : buildId;
+
+    if (this.classroomActivity) {
+      try {
+        const resp = await fetch(`/api/student/activities/${encodeURIComponent(this.classroomActivity.id)}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            score: numericScore,
+            buildId: submitBuildId,
+          }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(data?.detail?.error || data?.error || 'Submission failed');
+        }
+        this.classroomActivity.isSubmitted = true;
+        this.classroomActivity.score = numericScore;
+        this.classroomActivity.buildId = submitBuildId;
+        if (data?.submission?.submittedAt) {
+          this.classroomActivity.submittedAt = data.submission.submittedAt;
+        }
+        this._syncScenarioUi();
+        this._loadStudentAssignedActivities();
+        this.showToast(
+          `Submitted "${this.classroomActivity.activityName}" (${numericScore}/100) to ${this.classroomActivity.className}!`,
+          'ok'
+        );
+      } catch (err) {
+        this.showToast(err?.message || 'Submission failed', 'err');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = defaultBtnText;
+        }
+        return;
+      }
+    } else if (this.scenarioId) {
       try {
         await fetch(`/api/scenarios/${encodeURIComponent(this.scenarioId)}/complete`, {
           method: 'POST',
@@ -1275,13 +1430,12 @@ class SimulatorApp {
         console.warn('Scenario completion save failed:', err);
       }
     }
+
     if (btn) {
       btn.disabled = false;
-      btn.textContent = this.scenarioId ? 'Save & Submit Activity' : 'Save Build to Gallery';
+      btn.textContent = defaultBtnText;
     }
-    if (buildId) {
-      this.closeSubmitModal();
-    }
+    this.closeSubmitModal();
   }
 
   // ------------------------------------------------------------------
@@ -1844,6 +1998,132 @@ class SimulatorApp {
     return { ok: true, preset };
   }
 
+  async _loadStudentAssignedActivities() {
+    try {
+      const resp = await fetch('/api/student/classrooms', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      if (!resp.ok) return;
+      const data = await resp.json().catch(() => ({}));
+      const classrooms = Array.isArray(data?.classrooms) ? data.classrooms : [];
+      const flattened = [];
+      for (const cls of classrooms) {
+        const className = cls.displayName || cls.name || 'Classroom';
+        const instructorName = cls.instructorName || 'Instructor';
+        const activities = Array.isArray(cls.activities) ? cls.activities : [];
+        for (const act of activities) {
+          flattened.push({
+            ...act,
+            className,
+            instructorName,
+          });
+        }
+      }
+      this.studentAssignedActivities = flattened;
+
+      const tabScenario = document.getElementById('tabScenario');
+      const isInstructor = this.userRole === 'teacher' || this.userRole === 'instructor';
+      if (tabScenario && (isInstructor || this.scenarioId || this.classroomActivity || flattened.length > 0)) {
+        tabScenario.style.display = 'block';
+      }
+      this._syncScenarioUi();
+    } catch (err) {
+      console.warn('Could not load student classroom activities:', err);
+    }
+  }
+
+  async _loadClassroomActivityFromUrl(activityId) {
+    try {
+      const resp = await fetch(`/api/student/activities/${encodeURIComponent(activityId)}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data?.activity) {
+        throw new Error(data?.detail?.error || data?.error || 'Classroom activity not found');
+      }
+
+      const act = data.activity;
+      this.classroomActivity = act;
+      this.classroomActivityId = String(act.id);
+
+      const tabScenario = document.getElementById('tabScenario');
+      if (tabScenario) tabScenario.style.display = 'block';
+
+      const fallback = resolveWorkstationFallback(act.activityName);
+      const faultLabId = act.faultLabId || fallback?.faultLabId || null;
+
+      if (faultLabId) {
+        this.loadTroubleshootingPreset(faultLabId);
+        if (this.dataMgr.activity) {
+          this.dataMgr.activity.title = act.activityName || this.dataMgr.activity.title;
+          if (!this.dataMgr.activity.description && fallback?.description) {
+            this.dataMgr.activity.description = fallback.description;
+          }
+          if ((!this.dataMgr.activity.objectives || !this.dataMgr.activity.objectives.length) && fallback?.objectives) {
+            this.dataMgr.loadActivityConfig({
+              ...this.dataMgr.activity,
+              title: act.activityName || this.dataMgr.activity.title,
+              objectives: fallback.objectives,
+            });
+          }
+        }
+      } else {
+        let scenarioData = null;
+        if (act.scenarioId) {
+          try {
+            const scResp = await fetch(`/api/scenarios/${encodeURIComponent(act.scenarioId)}`, {
+              credentials: 'same-origin',
+            });
+            if (scResp.ok) {
+              scenarioData = await scResp.json().catch(() => null);
+            }
+          } catch {
+            // Fall back to classroom activity metadata
+          }
+        }
+
+        this.activeFaultLabId = '';
+        const labSel = document.getElementById('faultLabSelect');
+        if (labSel) labSel.value = '';
+        const seqSel = document.getElementById('sequencePresetSelect');
+        if (seqSel) seqSel.value = 'bench_first';
+
+        this.asm.reset(this.dataMgr.getDefaultCase(), 'bench_first');
+        this.dataMgr.loadActivityConfig({
+          id: act.scenarioId || act.id,
+          title: act.activityName,
+          description:
+            scenarioData?.description ||
+            fallback?.description ||
+            'Assemble the assigned PC configuration cleanly in 3D and submit for validation.',
+          activityType: act.activityType || scenarioData?.activityType || fallback?.activityType || 'build',
+          tier: scenarioData?.tier || fallback?.tier || 'Standard',
+          objectives:
+            Array.isArray(scenarioData?.objectives) && scenarioData.objectives.length
+              ? scenarioData.objectives
+              : (fallback?.objectives || []),
+          constraints: scenarioData?.constraints || {},
+        });
+      }
+
+      if (this.dataMgr.activity) {
+        this.dataMgr.activity.title = act.activityName || this.dataMgr.activity.title;
+      }
+      this._syncScenarioUi();
+      this.switchRTab('scenario', document.getElementById('tabScenario'));
+
+      if (act.isLocked) {
+        this.showToast(`"${act.activityName}" (${act.className}) is locked by your instructor.`, 'warn');
+      } else {
+        this.showToast(`Loaded "${act.activityName}" from ${act.className}.`, 'ok');
+      }
+    } catch (err) {
+      this.showToast(err?.message || 'Could not load classroom activity.', 'err');
+    }
+  }
+
   async _loadScenarioFromUrl(id) {
     try {
       const resp = await fetch(`/api/scenarios/${encodeURIComponent(id)}`, { credentials: 'same-origin' });
@@ -1857,17 +2137,128 @@ class SimulatorApp {
     }
   }
 
+  _renderAssignedActivitiesHtml() {
+    const items = Array.isArray(this.studentAssignedActivities) ? this.studentAssignedActivities : [];
+    if (!items.length) return '';
+    return `
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">
+          Classroom Activities (${items.length})
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${items.map((item) => {
+            const isActive = Boolean(this.classroomActivity && String(item.id) === String(this.classroomActivity.id));
+            const due = [item.dueDateValue, item.dueTimeValue].filter(Boolean).join(' ').trim();
+            const hasScore = Boolean(item.isSubmitted) && item.score !== null && item.score !== undefined;
+            let statusText = 'Assigned';
+            let statusStyle = 'background:#e2e8f0;color:#1e293b;';
+            if (item.isLocked) {
+              statusText = 'Locked';
+              statusStyle = 'background:#fef2f2;color:#991b1b;';
+            } else if (hasScore) {
+              statusText = `Submitted (${item.score}/100)`;
+              statusStyle = 'background:#dcfce7;color:#166534;';
+            } else if (item.isSubmitted) {
+              statusText = 'Submitted';
+              statusStyle = 'background:#dcfce7;color:#166534;';
+            }
+            const actionEl = isActive
+              ? `<span style="font-size:10px;font-weight:700;color:var(--green-dk);">Active</span>`
+              : item.isLocked
+                ? `<span style="font-size:10px;font-weight:600;color:#991b1b;">Locked</span>`
+                : `<a href="/simulator?activity=${encodeURIComponent(item.id)}" class="btn-sm btn-green" style="padding:3px 8px;font-size:10px;">${item.isSubmitted ? 'Re-open' : 'Launch'}</a>`;
+
+            return `
+              <div style="padding:7px 8px;border-radius:7px;border:1px solid ${isActive ? 'var(--green)' : 'var(--border)'};background:${isActive ? '#f0fdf4' : '#f8fafc'};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:var(--slate);line-height:1.3;word-break:break-word;">${escapeHtml(item.activityName || 'Activity')}</div>
+                    <div style="font-size:10px;color:var(--muted);margin-top:2px;">${escapeHtml(item.className || 'Classroom')}${due ? ` · Due ${escapeHtml(due)}` : ''}</div>
+                  </div>
+                  ${actionEl}
+                </div>
+                <div style="margin-top:4px;">
+                  <span style="display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;${statusStyle}">${escapeHtml(statusText)}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   _syncScenarioUi() {
     const act = this.dataMgr.activity;
+    const ca = this.classroomActivity;
     const lbl = document.getElementById('scenarioLabel');
     const sum = document.getElementById('scenarioSummary');
-    if (lbl) lbl.textContent = act?.title || '3D Lab';
+
+    if (lbl) {
+      lbl.textContent = ca
+        ? `${ca.className || 'Classroom'} · ${ca.activityName || act?.title || 'Activity'}`
+        : (act?.title || '3D Lab');
+    }
+
     if (sum) {
-      sum.innerHTML = `
-        <strong>${escapeHtml(act?.title || 'Free PC Assembly Lab')}</strong><br/>
-        Type: ${escapeHtml(act?.activityType || 'build')} · Tier: ${escapeHtml(act?.tier || 'Any')}<br/>
-        <span style="color:var(--muted);">${escapeHtml(act?.description || '')}</span>
-      `;
+      const assignedHtml = this._renderAssignedActivitiesHtml();
+      if (ca) {
+        let dueStr = [ca.dueDateValue, ca.dueTimeValue].filter(Boolean).join(' ').trim();
+        if (!dueStr && ca.dueAt) {
+          const d = new Date(ca.dueAt);
+          dueStr = Number.isNaN(d.getTime()) ? String(ca.dueAt) : d.toLocaleString();
+        }
+        const hasScore = Boolean(ca.isSubmitted) && ca.score !== null && ca.score !== undefined;
+        let statusLabel = 'In Progress';
+        let statusStyle = 'background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;';
+        if (ca.isLocked) {
+          statusLabel = 'Locked';
+          statusStyle = 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;';
+        } else if (hasScore) {
+          statusLabel = `Submitted (${ca.score}/100)`;
+          statusStyle = 'background:#dcfce7;color:#166534;border:1px solid #86efac;';
+        } else if (ca.isSubmitted) {
+          statusLabel = 'Submitted';
+          statusStyle = 'background:#dcfce7;color:#166534;border:1px solid #86efac;';
+        }
+
+        const objs = Array.isArray(act?.objectives) ? act.objectives : [];
+        const objHtml = objs.length
+          ? `
+            <div style="margin-top:8px;">
+              <div style="font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Objectives</div>
+              <ul style="margin:0;padding-left:15px;color:var(--slate2);font-size:11px;line-height:1.45;">
+                ${objs.map((o) => `<li style="margin-bottom:2px;">${escapeHtml(typeof o === 'string' ? o : (o?.text || ''))}</li>`).join('')}
+              </ul>
+            </div>
+          `
+          : '';
+
+        sum.innerHTML = `
+          <div style="padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+              <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;${statusStyle}">${escapeHtml(statusLabel)}</span>
+              ${ca.isLocked && hasScore ? `<span style="font-size:10px;font-weight:700;color:#166534;">Score: ${escapeHtml(ca.score)}/100</span>` : ''}
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--slate);line-height:1.35;margin-bottom:4px;">${escapeHtml(ca.activityName || act?.title || 'Assigned Activity')}</div>
+            <div style="font-size:11px;color:var(--slate2);line-height:1.45;">
+              <div><strong>Classroom:</strong> ${escapeHtml(ca.className || 'Classroom')}</div>
+              <div><strong>Instructor:</strong> ${escapeHtml(ca.instructorName || 'Instructor')}</div>
+              <div><strong>Due:</strong> ${escapeHtml(dueStr || 'Not specified')}</div>
+            </div>
+            ${act?.description ? `<div style="margin-top:6px;font-size:11px;color:var(--muted);line-height:1.45;">${escapeHtml(act.description)}</div>` : ''}
+            ${objHtml}
+          </div>
+          ${assignedHtml}
+        `;
+      } else {
+        sum.innerHTML = `
+          <strong>${escapeHtml(act?.title || 'Free PC Assembly Lab')}</strong><br/>
+          Type: ${escapeHtml(act?.activityType || 'build')} · Tier: ${escapeHtml(act?.tier || 'Any')}<br/>
+          <span style="color:var(--muted);">${escapeHtml(act?.description || '')}</span>
+          ${assignedHtml}
+        `;
+      }
     }
     this._renderInstallGuide();
   }

@@ -23,15 +23,10 @@ env/
 
 # Database
 *.sqlite3
-*.db
-*.db-wal
-*.db-shm
-server/data/
 
 # Distribution / build
 dist/
 build/
-/frontend/static/app/
 
 # Mac
 .DS_Store
