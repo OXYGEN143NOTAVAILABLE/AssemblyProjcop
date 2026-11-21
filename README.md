@@ -53,9 +53,12 @@ The server starts on `http://localhost:3000`.
 | Command | Description |
 |---|---|
 | `npm run dev` | Starts Express server (`node server.mjs`) on port 3000 |
+| `npm run build` | Builds the React student dashboard (`/student/dashboard`) into `frontend/static/student-app/` |
 | `npm start` | Starts Express server (`node server.mjs`) |
 | `npm test` | Runs unit & 3D logic tests (`node --test server/logic.test.mjs server/sim3d.test.mjs`) |
 | `npm run lint` | Validates `firestore.rules` with `@firebase/eslint-plugin-security-rules` |
+
+Students can sign in from the homepage and are taken to the React dashboard at `/student/dashboard` (static preview available at `/static/student-dashboard-preview.html`). Published instructor activities appear there; selecting one opens the 3D simulator with that scenario loaded.
 
 ## Default Accounts (Development Seed)
 

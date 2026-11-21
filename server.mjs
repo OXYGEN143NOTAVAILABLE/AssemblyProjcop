@@ -7,6 +7,12 @@ import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { AppDatabase } from './server/db.mjs';
 import {
+  canStudentStartActivity,
+  computeStudentDashboardStats,
+  sanitizeActivityForStudent,
+  validateJoinCode,
+} from './server/studentLogic.mjs';
+import {
   ADMIN_SCHEMAS,
   ADMIN_TABLES,
   CATEGORY_INFO,
@@ -571,7 +577,7 @@ app.post('/api/auth/register', (req, res) => {
       const user = createStudentUser(payload);
       const pub = publicStudentUser(user);
       const token = setAppSessionCookie(req, res, 'student', user.school_id, remember);
-      return res.json({ ok: true, user: pub, token, redirectUrl: '/simulator' });
+      return res.json({ ok: true, user: pub, token, redirectUrl: '/student/dashboard' });
     }
     if (['instructor', 'teacher', 'admin'].includes(role)) {
       const user = createInstructorUser(payload);
@@ -613,7 +619,7 @@ app.post('/api/auth/login', (req, res) => {
       user.last_login_at = new Date().toISOString();
       db.updateStudentLogin(user.student_id, user.last_login_at);
       const token = setAppSessionCookie(req, res, 'student', user.school_id, remember);
-      return res.json({ ok: true, user: publicStudentUser(user), token, redirectUrl: '/simulator' });
+      return res.json({ ok: true, user: publicStudentUser(user), token, redirectUrl: '/student/dashboard' });
     }
 
     if (role === 'admin') {
@@ -838,6 +844,335 @@ app.get('/api/scenarios', (req, res) => {
     .filter((s) => s.is_published && (instructorId === null || s.instructor_id === instructorId))
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
   res.json(rows.map(scenarioRowToPublic));
+});
+
+function studentClassesPayload(studentId) {
+  const instructors = new Map(store.admin_users.map((u) => [u.admin_id, u.display_name || u.username]));
+  const enrollments = store.class_enrollments.filter((e) => e.student_id === studentId);
+  const byClassId = new Map(store.classes.map((c) => [c.class_id, c]));
+
+  return enrollments
+    .map((enrollment) => {
+      const cls = byClassId.get(enrollment.class_id);
+      if (!cls) return null;
+      const activityCount = store.activity_records.filter(
+        (r) => r.student_id === studentId && r.class_id === cls.class_id
+      ).length;
+      return {
+        id: cls.class_id,
+        courseCode: cls.course_code,
+        className: cls.class_name,
+        section: cls.section,
+        joinCode: cls.join_code,
+        instructorName: instructors.get(cls.instructor_id) || 'Instructor',
+        enrollmentStatus: enrollment.status,
+        requestedAt: enrollment.requested_at,
+        decidedAt: enrollment.decided_at,
+        activityCount,
+      };
+    })
+    .filter(Boolean);
+}
+
+app.get('/api/student/activities', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const classById = new Map(store.classes.map((c) => [c.class_id, c]));
+  const instructors = new Map(store.admin_users.map((u) => [u.admin_id, u.display_name || u.username]));
+  const recordsByScenario = new Map(
+    store.activity_records
+      .filter((r) => r.student_id === user.id)
+      .map((r) => [r.scenario_id, r])
+  );
+  const completions = new Map(
+    store.scenario_completions
+      .filter((completion) => completion.user_role === 'student' && completion.user_id === user.id)
+      .map((completion) => [completion.scenario_id, completion])
+  );
+
+  const activities = store.pc_scenarios
+    .filter((scenario) => scenario.is_published)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((scenario) => {
+      const existingRecord = recordsByScenario.get(scenario.scenario_id);
+      const fallbackCompletion = !existingRecord ? completions.get(scenario.scenario_id) : null;
+      const record = existingRecord || (fallbackCompletion
+        ? {
+            scenario_id: scenario.scenario_id,
+            student_id: user.id,
+            class_id: 1,
+            status: 'submitted',
+            attempts_allowed: 1,
+            attempts_used: 1,
+            submitted_at: fallbackCompletion.completed_at,
+          }
+        : {
+            scenario_id: scenario.scenario_id,
+            student_id: user.id,
+            class_id: 1,
+            status: 'notStarted',
+            attempts_allowed: 1,
+            attempts_used: 0,
+          });
+      const cls = classById.get(record.class_id) || classById.get(1) || null;
+      const instructorName = instructors.get(scenario.instructor_id) || 'Instructor';
+      return sanitizeActivityForStudent(scenarioRowToPublic(scenario), record, cls, instructorName);
+    });
+
+  const classes = studentClassesPayload(user.id);
+  const privacyRequests = store.privacy_requests
+    .filter((p) => p.student_id === user.id)
+    .map((p) => ({
+      id: p.request_id,
+      type: p.request_type,
+      reason: p.reason,
+      status: p.status,
+      createdAt: p.created_at,
+    }));
+
+  res.json({
+    activities,
+    stats: computeStudentDashboardStats(activities),
+    classes,
+    privacyRequests,
+    sessionTimeoutMinutes: 30,
+  });
+});
+
+app.get('/api/student/classes', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+  res.json({ classes: studentClassesPayload(user.id) });
+});
+
+app.post('/api/student/classes/join', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const check = validateJoinCode(req.body?.joinCode || req.body?.code);
+  if (!check.valid) {
+    return res.status(400).json({ detail: { error: check.error } });
+  }
+
+  const targetClass = store.classes.find((c) => c.join_code.toUpperCase() === check.code);
+  if (!targetClass) {
+    return res.status(404).json({ detail: { error: `No class found matching join code "${check.code}". Check with your instructor.` } });
+  }
+
+  const existing = store.class_enrollments.find(
+    (e) => e.class_id === targetClass.class_id && e.student_id === user.id
+  );
+  if (existing) {
+    const label = existing.status === 'approved' ? 'already enrolled in' : 'already waiting for approval to join';
+    return res.status(409).json({
+      detail: { error: `You are ${label} ${targetClass.course_code} · ${targetClass.section}.` },
+    });
+  }
+
+  const now = new Date().toISOString();
+  const enrollmentStatus = targetClass.auto_approve ? 'approved' : 'pending';
+  const saved = db.upsertEnrollment({
+    class_id: targetClass.class_id,
+    student_id: user.id,
+    status: enrollmentStatus,
+    requested_at: now,
+    decided_at: enrollmentStatus === 'approved' ? now : null,
+  });
+  store.class_enrollments.push(saved);
+
+  db.insertAuditLog({
+    actor_role: 'student',
+    actor_id: user.id,
+    action: enrollmentStatus === 'approved' ? 'class_joined' : 'class_join_requested',
+    target_type: 'class',
+    target_id: String(targetClass.class_id),
+    details: { joinCode: targetClass.join_code, status: enrollmentStatus },
+    created_at: now,
+  });
+
+  res.status(201).json({
+    ok: true,
+    status: enrollmentStatus,
+    message: enrollmentStatus === 'approved'
+      ? `Joined ${targetClass.course_code} · ${targetClass.section}.`
+      : `Join request sent for ${targetClass.course_code} · ${targetClass.section}. Waiting for instructor approval.`,
+    classes: studentClassesPayload(user.id),
+  });
+});
+
+app.post('/api/student/activities/:scenarioId/autosave', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const scenarioId = Number(req.params.scenarioId);
+  const scenario = store.pc_scenarios.find((s) => s.scenario_id === scenarioId && s.is_published);
+  if (!scenario) {
+    return res.status(404).json({ detail: { error: 'Assigned activity not found' } });
+  }
+
+  const existing = store.activity_records.find((r) => r.scenario_id === scenarioId && r.student_id === user.id);
+  if (existing && (existing.status === 'submitted' || existing.status === 'released')) {
+    return res.status(409).json({ detail: { error: 'This activity has already been submitted and is locked for instructor review.' } });
+  }
+
+  const now = new Date().toISOString();
+  const saved = db.upsertActivityRecord({
+    ...(existing || {}),
+    scenario_id: scenarioId,
+    student_id: user.id,
+    class_id: existing?.class_id ?? 1,
+    status: 'inProgress',
+    attempts_allowed: existing?.attempts_allowed ?? 1,
+    attempts_used: existing?.attempts_used ?? 0,
+    last_saved_at: now,
+    draft: req.body?.draft || null,
+  });
+
+  if (existing) Object.assign(existing, saved);
+  else store.activity_records.push(saved);
+
+  res.json({ ok: true, status: saved.status, lastSavedAt: saved.last_saved_at });
+});
+
+app.post('/api/student/activities/:scenarioId/submit', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const scenarioId = Number(req.params.scenarioId);
+  const scenario = store.pc_scenarios.find((s) => s.scenario_id === scenarioId && s.is_published);
+  if (!scenario) {
+    return res.status(404).json({ detail: { error: 'Assigned activity not found' } });
+  }
+
+  const existing = store.activity_records.find((r) => r.scenario_id === scenarioId && r.student_id === user.id);
+  // SR-07 & FR-05: Idempotent single-submission protection
+  if (existing && (existing.status === 'submitted' || existing.status === 'released')) {
+    return res.json({
+      ok: true,
+      alreadySubmitted: true,
+      status: existing.status,
+      submittedAt: existing.submitted_at,
+      message: 'Your submission was already recorded and is awaiting instructor review.',
+    });
+  }
+
+  if (existing && !canStudentStartActivity({ status: existing.status, attemptsAllowed: existing.attempts_allowed, attemptsUsed: existing.attempts_used })) {
+    return res.status(409).json({ detail: { error: 'No submission attempts remaining. Ask your instructor to reopen this activity.' } });
+  }
+
+  const now = new Date().toISOString();
+  const proposedScoreRaw = req.body?.score;
+  const proposedScore = proposedScoreRaw !== undefined && proposedScoreRaw !== null && proposedScoreRaw !== '' ? Number(proposedScoreRaw) : null;
+  const proposedVerdict = cleanText(req.body?.compatibilityVerdict) || 'Pending check';
+  const issues = Array.isArray(req.body?.issues) ? req.body.issues.map((i) => cleanText(i)).filter(Boolean) : [];
+
+  const saved = db.upsertActivityRecord({
+    ...(existing || {}),
+    scenario_id: scenarioId,
+    student_id: user.id,
+    class_id: existing?.class_id ?? 1,
+    status: 'submitted',
+    attempts_allowed: existing?.attempts_allowed ?? 1,
+    attempts_used: (existing?.attempts_used ?? 0) + 1,
+    last_saved_at: now,
+    submitted_at: now,
+    compatibility_verdict: proposedVerdict,
+    proposed_score: proposedScore,
+    final_score: null,
+    issues,
+    instructor_feedback: '',
+    reviewed_by_name: '',
+    released_at: null,
+    draft: req.body?.draft || existing?.draft || null,
+  });
+
+  if (existing) Object.assign(existing, saved);
+  else store.activity_records.push(saved);
+
+  db.insertAuditLog({
+    actor_role: 'student',
+    actor_id: user.id,
+    action: 'activity_submitted',
+    target_type: 'scenario',
+    target_id: String(scenarioId),
+    details: { attemptsUsed: saved.attempts_used },
+    created_at: now,
+  });
+
+  // FR-15: Do NOT return proposed score or compatibility verdict to student
+  res.json({
+    ok: true,
+    status: 'submitted',
+    submittedAt: saved.submitted_at,
+    message: 'Activity submitted. Your evaluation and feedback will appear once your instructor releases them.',
+  });
+});
+
+// SEC-08: Students cannot modify or delete stored evaluations
+app.all('/api/student/activities/:scenarioId/evaluation', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  return res.status(403).json({
+    detail: { error: 'Stored evaluations are read-only and can only be confirmed or released by an instructor.' },
+  });
+});
+
+// SEC-11: RA 10173 Data Privacy personal data erasure request
+app.post('/api/student/privacy/erasure-request', (req, res) => {
+  const user = requireLoggedIn(req, res);
+  if (!user) return;
+  if (user.role !== 'student') {
+    return res.status(403).json({ detail: { error: 'Student access required' } });
+  }
+
+  const reason = cleanText(req.body?.reason || '').slice(0, 300);
+  const now = new Date().toISOString();
+  const saved = db.insertPrivacyRequest({
+    student_id: user.id,
+    request_type: 'erasure',
+    reason: reason || 'Student personal data erasure request under RA 10173',
+    status: 'recorded',
+    created_at: now,
+  });
+  store.privacy_requests.unshift(saved);
+
+  db.insertAuditLog({
+    actor_role: 'student',
+    actor_id: user.id,
+    action: 'privacy_erasure_requested',
+    target_type: 'student',
+    target_id: String(user.id),
+    details: { requestId: saved.request_id },
+    created_at: now,
+  });
+
+  res.status(201).json({
+    ok: true,
+    request: {
+      id: saved.request_id,
+      type: saved.request_type,
+      reason: saved.reason,
+      status: saved.status,
+      createdAt: saved.created_at,
+    },
+    message: 'Your RA 10173 data erasure request has been logged for review, subject to institutional academic and audit record retention.',
+  });
 });
 
 app.get('/api/scenarios/:scenarioId', (req, res) => {
@@ -1736,6 +2071,8 @@ const staticDir = path.join(__dirname, 'frontend', 'static');
 if (fs.existsSync(staticDir)) {
   app.use('/static', express.static(staticDir));
 }
+const studentAppDir = path.join(staticDir, 'student-app');
+app.use('/student-assets', express.static(studentAppDir));
 
 app.use('/vendor/three/addons', express.static(path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm')));
 app.use('/vendor/three', express.static(path.join(__dirname, 'node_modules', 'three', 'build')));
@@ -1759,6 +2096,21 @@ app.get('/', (_req, res) => {
   const html = readAndProcessTemplate('homepage.html');
   if (!html) return res.status(500).send('<h1>Assembly PC</h1><p>Homepage template not found.</p>');
   res.type('html').send(html);
+});
+
+app.get(['/student', '/student/dashboard'], (_req, res) => {
+  const studentAppIndex = path.join(studentAppDir, 'index.html');
+  if (!fs.existsSync(studentAppIndex)) {
+    return res.status(503).send('Student dashboard is not built. Run npm run build first.');
+  }
+  let html = fs.readFileSync(studentAppIndex, 'utf-8');
+  if (html.includes('</head>')) {
+    if (!html.includes('rel="icon"') && !html.includes("rel='icon'")) {
+      html = html.replace('</head>', '<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>\n</head>');
+    }
+    html = html.replace('</head>', `${IFRAME_TOKEN_BRIDGE_SCRIPT}\n</head>`);
+  }
+  return res.type('html').send(html);
 });
 
 app.get('/simulator', (req, res) => {
