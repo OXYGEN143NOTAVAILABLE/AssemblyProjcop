@@ -18,6 +18,17 @@ import {
   TROUBLESHOOTING_PRESETS,
 } from '../frontend/static/js/sim3d/SimulationDataManager.mjs';
 import { PlacementSnappingSystem, BENCH_PREP_ORIGIN, CASE_MB_ANCHOR, CASE_SUB_ANCHORS, STAGING_ANCHORS } from '../frontend/static/js/sim3d/PlacementSnappingSystem.mjs';
+import {
+  getCaseLayoutMetrics,
+  getPsuWorldCenter,
+  getStorageMountY,
+  getGpuWorldMetrics,
+  computePortWorldCoords,
+  computeCableWaypoints,
+  getComponentObstacleBoxes,
+  sampleWaypoints,
+  pointInsideBox,
+} from '../frontend/static/js/sim3d/CableRoutingSystem.mjs';
 import { AssemblyManager, COMPONENT_STATE } from '../frontend/static/js/sim3d/AssemblyManager.mjs';
 import { ValidationEngine } from '../frontend/static/js/sim3d/ValidationEngine.mjs';
 
@@ -340,4 +351,139 @@ test('Phase 2: TROUBLESHOOTING_PRESETS load cleanly from DB catalog, fail with e
     assert.equal(repairedReport.score, 100);
   }
 });
+
+test('Spatial anchors ground every staging part on the ESD mat and align PSU/MB/Fan inside case bounds', () => {
+  // Expanded ESD mat bounds: BoxGeometry(14.8, 0.02, 7.2) centered at (1.10, -0.01, 0)
+  // World X [-6.30 .. +8.50], Z [-3.60 .. +3.60], top at Y=0
+  for (const [slot, pos] of Object.entries(STAGING_ANCHORS)) {
+    assert.ok(pos.x >= -6.10 && pos.x <= 8.30, `${slot} staging X=${pos.x} out of mat bounds`);
+    assert.ok(pos.z >= -3.40 && pos.z <= 3.40, `${slot} staging Z=${pos.z} out of mat bounds`);
+    assert.ok(pos.y > 0 && pos.y <= 0.65, `${slot} staging Y=${pos.y} looks floating`);
+    if (slot === 'mb') {
+      assert.equal(pos.x, BENCH_PREP_ORIGIN.x, 'Motherboard staging should match BENCH_PREP_ORIGIN');
+    } else {
+      // Staging tray spans X [3.35 .. 7.85], Z [-3.25 .. +3.25]
+      assert.ok(pos.x >= 3.35 && pos.x <= 7.85, `${slot} staging X=${pos.x} outside STAGING TRAY`);
+      assert.ok(pos.z >= -3.25 && pos.z <= 3.25, `${slot} staging Z=${pos.z} outside STAGING TRAY`);
+    }
+  }
+  const stagedEntries = Object.entries(STAGING_ANCHORS);
+  for (let i = 0; i < stagedEntries.length; i += 1) {
+    for (let j = i + 1; j < stagedEntries.length; j += 1) {
+      const [slotA, a] = stagedEntries[i];
+      const [slotB, b] = stagedEntries[j];
+      const xzDist = Math.hypot(a.x - b.x, a.z - b.z);
+      assert.ok(xzDist >= 0.70, `Staged parts ${slotA} and ${slotB} overlap (dist=${xzDist.toFixed(2)})`);
+    }
+  }
+  assert.ok(STAGING_ANCHORS.cooler.y <= 0.05, 'Cooler should rest coldplate flush on mat');
+  assert.ok(STAGING_ANCHORS.ram.y <= 0.05, 'RAM should rest edge pins flush on mat');
+  assert.ok(STAGING_ANCHORS.gpu.y <= 0.25, 'GPU should rest shroud flush on mat');
+
+  // PSU inside case shroud: floor top = 0.11, hY = 0.86 (half 0.43), shroud top = 1.12
+  assert.ok(CASE_SUB_ANCHORS.psu.y - 0.43 >= 0.12, 'PSU sinks into case floor');
+  assert.ok(CASE_SUB_ANCHORS.psu.y + 0.43 <= 1.10, 'PSU clips top of shroud');
+
+  // Motherboard PCB back (-0.018) must rest at or in front of brass standoff tips (-0.680)
+  assert.ok(CASE_MB_ANCHOR.z - 0.018 >= -0.681, 'Motherboard clips into brass standoffs');
+
+  // Rear case fan should sit cleanly toward +Z glass side away from rear I/O shroud (-0.70..-0.34)
+  assert.ok(CASE_SUB_ANCHORS.case_fan.z >= 0.20, 'Case fan clips into motherboard I/O shroud');
+});
+
+test('CableRoutingSystem routes all 8 PC cables without penetrating Cooler, GPU, RAM, MB PCB, or Case Walls', () => {
+  const dataMgr = new SimulationDataManager();
+  dataMgr.hydrateCatalogFromApi(buildTestApiCatalog());
+
+  const context = {
+    mbMountLocation: 'case',
+    caseComp: dataMgr.findComponent('case', 'case_atx_mid'),
+    mbComp: dataMgr.findComponent('mb', 4), // ATX ROG STRIX B850-E
+    coolerComp: dataMgr.findComponent('cooler', 'cooler_tower_120'),
+    gpuComp: dataMgr.findComponent('gpu', 4), // RTX 4070 (268 x 118 x 42 mm)
+    psuComp: dataMgr.findComponent('psu', 4), // RM850e 850W (160mm depth)
+    storageComp: dataMgr.findComponent('storage', 1), // 2.5" SATA SSD
+  };
+
+  const layout = getCaseLayoutMetrics(context.caseComp);
+  const obstacles = getComponentObstacleBoxes(context);
+
+  for (const def of CABLE_DEFINITIONS) {
+    const waypoints = computeCableWaypoints(def, context);
+    assert.ok(waypoints.length >= 4, `Cable ${def.id} should have multi-waypoint cable management route`);
+    const samples = sampleWaypoints(waypoints, 10);
+
+    for (let idx = 0; idx < samples.length; idx++) {
+      const pt = samples[idx];
+      // 1. Must stay strictly inside case exterior bounds (never poking through glass or steel walls)
+      assert.ok(
+        pt.x >= layout.rearWallOuterX + 0.02 && pt.x <= layout.frontInnerX + 0.20,
+        `${def.id} sample #${idx} X=${pt.x.toFixed(3)} exceeds case X bounds [${layout.rearWallOuterX}, ${layout.frontInnerX}]`
+      );
+      assert.ok(
+        pt.y >= layout.floorTopY && pt.y <= layout.roofInnerY + 0.03,
+        `${def.id} sample #${idx} Y=${pt.y.toFixed(3)} exceeds case Y bounds [${layout.floorTopY}, ${layout.roofInnerY}]`
+      );
+      assert.ok(
+        pt.z >= layout.backPanelInnerZ && pt.z <= layout.glassInnerZ,
+        `${def.id} sample #${idx} Z=${pt.z.toFixed(3)} exceeds case Z bounds [${layout.backPanelInnerZ}, ${layout.glassInnerZ}]`
+      );
+
+      // 2. Skip the exact socket endpoints (first/last 2 samples) and verify ZERO penetration through obstacles
+      if (idx <= 1 || idx >= samples.length - 2) continue;
+      for (const box of obstacles) {
+        assert.equal(
+          pointInsideBox(pt, box),
+          false,
+          `Cable ${def.id} penetrates ${box.name} at (${pt.x.toFixed(3)}, ${pt.y.toFixed(3)}, ${pt.z.toFixed(3)})`
+        );
+      }
+    }
+  }
+});
+
+test('Hardware proportions & dynamic placement keep PSU flush at rear, GPU hanging below PCIe slot, and mATX/ITX ports accurate', () => {
+  const dataMgr = new SimulationDataManager();
+  dataMgr.hydrateCatalogFromApi(buildTestApiCatalog());
+
+  const atxCase = dataMgr.findComponent('case', 'case_atx_mid');
+  const layout = getCaseLayoutMetrics(atxCase);
+
+  // 1. Both 140mm and 160mm PSUs keep rear AC faceplate flush against rear wall (never protruding out back)
+  for (const psuId of [1, 4]) {
+    const psuComp = dataMgr.findComponent('psu', psuId);
+    const psu = getPsuWorldCenter(psuComp, atxCase);
+    const rearFaceX = psu.x - psu.lenX * 0.5;
+    assert.ok(Math.abs(rearFaceX - (layout.rearWallOuterX + 0.04)) < 0.005, `PSU ${psuComp.name} rear face misaligned: ${rearFaceX}`);
+  }
+
+  // 2. GPU backplate sits just above PCIe slot while heatsink hangs downward, leaving generous M.2/Cooler clearance
+  const gpu4070 = getGpuWorldMetrics(dataMgr.findComponent('gpu', 4));
+  const gpu4090 = getGpuWorldMetrics(dataMgr.findComponent('gpu', 6));
+  assert.ok(gpu4070.maxY - gpu4070.anchorY <= 0.055, 'GPU backplate rises too high above PCIe slot');
+  assert.ok(gpu4070.minY < gpu4070.anchorY - 0.30, 'GPU heatsink should hang downward below PCIe slot');
+  assert.ok(gpu4090.minY < gpu4070.minY, 'Triple-slot RTX 4090 should be thicker downward than 2-slot RTX 4070');
+  assert.ok(gpu4090.maxZ < layout.glassInnerZ, 'RTX 4090 width must stay inside tempered glass panel');
+
+  // 3. SATA 2.5" SSD and 3.5" HDD rest flush on case drive shelf (shelf top Y = 0.388) and expose distinct power/data ports
+  const ssd25 = dataMgr.getCatalog('storage').find((s) => s.storageKind === 'sata_25') || { storageType: 'SATA SSD', formFactor: '2.5 inch' };
+  const hdd35 = dataMgr.getCatalog('storage').find((s) => s.storageKind === 'sata_35') || { storageType: 'HDD', formFactor: '3.5 inch' };
+  assert.ok(Math.abs((getStorageMountY(ssd25) - 0.046) - 0.390) < 0.005, '2.5" SSD should rest flush on drive shelf');
+  assert.ok(Math.abs((getStorageMountY(hdd35) - 0.125) - 0.390) < 0.005, '3.5" HDD should rest flush on drive shelf');
+
+  const ports = computePortWorldCoords({ mbMountLocation: 'case', storageComp: ssd25, caseComp: atxCase });
+  assert.ok(Math.abs(ports.sata_drive_pwr.x - ports.sata_drive_data.x) >= 0.18, 'SATA power & data ports must sit side-by-side without overlapping');
+
+  // 4. Micro-ATX & Mini-ITX JFP1 / 24-pin ports shift accurately to match board PCB bounds
+  const atxPorts = computePortWorldCoords({ mbMountLocation: 'case', mbComp: { dimensionsMm: { w: 244, h: 305, d: 24 } } });
+  const matxPorts = computePortWorldCoords({ mbMountLocation: 'case', mbComp: { dimensionsMm: { w: 244, h: 244, d: 22 } } });
+  const itxPorts = computePortWorldCoords({ mbMountLocation: 'case', mbComp: { dimensionsMm: { w: 170, h: 170, d: 18 } } });
+  assert.ok(matxPorts.mb_jfp1.y > atxPorts.mb_jfp1.y + 0.50, 'Micro-ATX JFP1 header must sit higher on shorter PCB');
+  assert.ok(itxPorts.mb_24pin.x < atxPorts.mb_24pin.x - 0.60, 'Mini-ITX 24-pin header must sit closer to rear I/O');
+
+  // 5. Rear 120mm exhaust fan sits strictly inside inner rear wall without clipping
+  assert.ok(CASE_SUB_ANCHORS.case_fan.x - 0.125 >= layout.rearWallInnerX, 'Rear exhaust fan clips into rear case wall');
+});
+
+
 

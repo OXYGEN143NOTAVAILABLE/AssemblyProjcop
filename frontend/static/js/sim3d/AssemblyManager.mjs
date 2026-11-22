@@ -13,6 +13,7 @@ import {
 } from './SimulationDataManager.mjs';
 import {
   PlacementSnappingSystem,
+  CASE_ORIGIN,
   STAGING_ANCHORS,
   normalizeRotationStep,
 } from './PlacementSnappingSystem.mjs';
@@ -114,7 +115,7 @@ export class AssemblyManager {
         component: defaultCaseComponent,
         status: COMPONENT_STATE.INSTALLED_CORRECT,
         mountLocation: 'workstation',
-        position: { x: -1.65, y: 0, z: 0 },
+        position: { ...CASE_ORIGIN },
         rotationStep: 0,
         secured: true,
         aligned: true,
@@ -174,7 +175,7 @@ export class AssemblyManager {
         component,
         status: COMPONENT_STATE.INSTALLED_CORRECT,
         mountLocation: 'workstation',
-        position: { x: -1.65, y: 0, z: 0 },
+        position: { ...CASE_ORIGIN },
         rotationStep: 0,
         secured: true,
         aligned: true,
@@ -278,9 +279,9 @@ export class AssemblyManager {
       entry.mountLocation = 'staging';
       entry.secured = false;
       entry.position = {
-        x: Math.max(-4.5, Math.min(5.2, worldPos.x)),
+        x: Math.max(-5.9, Math.min(8.1, worldPos.x)),
         y: Math.max(STAGING_ANCHORS[slotKey]?.y ?? 0.1, worldPos.y),
-        z: Math.max(-3.0, Math.min(3.0, worldPos.z)),
+        z: Math.max(-3.35, Math.min(3.35, worldPos.z)),
       };
       if (slotKey === 'mb') {
         this.mbMountLocation = null;

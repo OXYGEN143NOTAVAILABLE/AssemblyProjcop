@@ -24,6 +24,47 @@ A running log of changes, bug fixes, and added features for the Assembly PC appl
 
 ---
 
+## [2026-11-18] — 3D Placement Alignment Fixes & Sidebar-to-3D Drag-and-Drop (`/simulator`)
+
+### Added
+- **Sidebar-to-3D Direct Drag & Drop (`SimulatorApp.mjs`, `InteractionManager.mjs`, `ComponentManager.mjs`, `simulation.html`)**:
+  - Hardware catalog rows (`#sidebarList .comp-item`) are now natively draggable (`draggable="true"` with grip indicator & `cursor: grab`) directly onto the `#sim3dViewport` 3D canvas while preserving click-to-stage.
+  - Shared planar raycasting (`_projectClientToWorld`) renders a real-time translucent 3D drag ghost (`startDragGhost` / `updateDragGhost`), live green/amber/red snap ring guide, and status pill hints during drag, dropping parts directly onto the ESD Prep Pad, Case standoffs, sockets/slots, or Staging Tray.
+- **Spatial Bounds Unit Test (`server/sim3d.test.mjs`)**:
+  - Added automated assertions verifying grounded staging heights inside ESD mat boundaries, PSU shroud floor/ceiling clearances, motherboard standoff contact depth, and rear exhaust fan separation.
+
+### Fixed
+- **Case Rear Wall Cutouts & Hardware Fitment (`ProceduralHardwareFactory.mjs`, `PlacementSnappingSystem.mjs`)**:
+  - Fixed the `rotateY(Math.PI / 2)` X/Z mirror inversion on `ioHole` (`z: -0.70..-0.34`), `rearFanHole` (`z: +0.24`, aligned to `CASE_SUB_ANCHORS.case_fan`), and expanded `pcieHole` (`y: 1.28..2.64`) with evenly pitched expansion covers so the GPU dual-slot bracket & DisplayPort housings sit flush without clipping.
+  - Adjusted brass standoffs (`z = -0.712`, length `0.064`) to meet `CASE_MB_ANCHOR.z = -0.662` flush under the PCB, guarded mATX `pcieX1` bounds, and lifted `CASE_SUB_ANCHORS.psu` (`x: -3.24, y: 0.56`) so the PSU sits cleanly above the case floor inside the shroud viewing window.
+- **ESD Mat & Grounded Staging Tray (`SceneManager.mjs`, `PlacementSnappingSystem.mjs`, `ComponentManager.mjs`)**:
+  - Aligned `_makeEsdMatTexture()` zones (`CHASSIS BAY`, `MOTHERBOARD ESD PREP PAD`, `STAGING TRAY`) to exact world coordinates (`BENCH_PREP_ORIGIN` at `(2.05, 0.04, 0)`) and grounded all `STAGING_ANCHORS` items (Cooler, RAM, GPU, CPU, Storage, PSU, Case Fan) onto the mat surface with zero floating or overlapping parts.
+- **3D Cable Ports (`ComponentManager.mjs`)**:
+  - Routed `psu_main`, `psu_eps`, `psu_pcie`, `psu_sata` onto the PSU `+X` modular bank inside the chassis, computed `gpu_pwr` dynamically from installed GPU dimensions, aligned `sata_drive`/`case_fp`/`fan_lead` endpoints, and hid SATA cable port markers on M.2 NVMe builds.
+
+### Verified
+- `npm test` (`17/17` tests passing), `node --check frontend/static/js/sim3d/*.mjs`, and headless Chromium (`playwright-cli`) sidebar drag-and-drop & visual verification (`0` console errors).
+
+---
+
+## [2026-11-18] — High-Detail Procedural 3D Hardware Anatomy Upgrade (`/simulator`)
+
+### Changed
+- **Anatomical Multi-Part Procedural 3D Hardware (`ProceduralHardwareFactory.mjs`)**:
+  - Upgraded all 10 hardware & cable builders (`mergeGeometries`, `ExtrudeGeometry` cutouts/bevels, `TubeGeometry` heatpipes, procedural `CanvasTexture` brushed-metal bump / honeycomb mesh / braided cable sleeve / PCB silkscreen / gold edge fingers / LGA+PGA underside pads) while preserving full interactive dragging, snapping, `R` rotation, 3D fasteners (`cpuLeverPivot`, `dimmLatches`, `fastenerScrews`), and port-to-port 3D cabling:
+    - **Case**: Isolation chrome/rubber feet, bottom PSU filter, roof honeycomb grille + multi-port top I/O, aluminum corner pillars, rubber cable grommets, 9 brass standoffs, sculpted **cutout rear wall** (MB I/O, exhaust fan, slotted PCIe covers, PSU bay), 3x front intake fans behind perforated mesh, PSU shroud with viewing window, and removable tempered glass side panel.
+    - **Motherboard**: Maker-themed (`ROG/ASUS`, `MSI`, `GIGABYTE`, `ASROCK`) PCB with normalized trace/silkscreen face, sculpted rear I/O shroud + 5 stacked color-coded ports, grooved VRM heatsinks + curved heatpipe + batched R68 chokes/caps, PCH heatsink, open-window stainless ILM CPU socket + Pin-1 triangle + lever, dual-rail keyed DIMM channels + latches, open `M2_1` & armored `M2_2`, steel PCIe x16, CR2032 coin battery, audio caps, and pin-filled headers.
+    - **CPU, Coolers, RAM, GPU, PSU, Storage, Case Fans & Cables**: AM5 cruciform / Intel stepped IHS with normalized top branding & underside pad matrix; Radial (28 fins), Single-Tower (4 heatpipes + top cap), and Dual-Tower (6 heatpipes + twin 20-fin stacks + top caps + dual fans) coolers; exposed DRAM ICs + notched 288-pin RAM; 42-fin GPU with 4 heatpipes, X-clamp core window, flow-through backplate, circular shroud fan bores, swept rotor blades & nameplate; PSU with recessed intake fan, wire grille, 3-prong IEC C14 inlet, red rocker & modular socket bank; M.2 NVMe (controller/DRAM/NAND/M-key), 2.5" SATA SSD, and 3.5" cast-aluminum HDD; octagonal swept-blade fans with stator struts; braided-sleeve cables with cable combs.
+- **3D Inspector & Render Loop (`SimulatorApp.mjs`, `ComponentManager.mjs`, `SceneManager.mjs`)**:
+  - Added `RoomEnvironment` PMREM + `ACESFilmicToneMapping` to `openInspector3D()`, converted the Inspector render loop to on-demand damping (`requestInspRender`), disposed `bumpMap`/`roughnessMap`/`PMREM` cleanly on close, and improved software-WebGL camera preset damping & Rear I/O framing.
+
+### Verified
+- `node --check frontend/static/js/sim3d/*.mjs` passed (`0` errors).
+- `npm test` (`16/16` tests passing in `/server/logic.test.mjs` and `/server/sim3d.test.mjs`).
+- Headless Chromium (`playwright-cli`) verified real pointer drag-and-drop & `R` rotation on staged parts, 3D Inspector renders across all upgraded hardware models, repaired Fault Lab assembly, Rear I/O wall cutouts, closed glass case view, and `0` console errors.
+
+---
+
 ## [2026-11-17] — Phase 2: Direct 3D Cabling, Fasteners, 3D Hardware Inspector, Fault Labs & Audio FX (`/simulator`)
 
 ### Added

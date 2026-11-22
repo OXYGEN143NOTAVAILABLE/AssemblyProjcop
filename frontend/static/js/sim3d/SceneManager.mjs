@@ -13,28 +13,28 @@ import { CASE_ORIGIN, BENCH_PREP_ORIGIN } from './PlacementSnappingSystem.mjs';
 export const CAMERA_PRESETS = Object.freeze({
   default: {
     label: 'Workstation',
-    pos: { x: 1.55, y: 5.45, z: 12.4 },
-    target: { x: 0.25, y: 1.85, z: 0.0 },
+    pos: { x: 1.50, y: 6.80, z: 15.2 },
+    target: { x: 0.90, y: 1.50, z: 0.0 },
   },
   interior: {
     label: 'Case Interior',
-    pos: { x: -1.15, y: 2.65, z: 6.45 },
-    target: { x: -1.65, y: 2.15, z: -0.15 },
+    pos: { x: CASE_ORIGIN.x + 0.50, y: 2.65, z: 6.45 },
+    target: { x: CASE_ORIGIN.x, y: 2.15, z: -0.15 },
   },
   bench: {
     label: 'Bench Prep Pad',
-    pos: { x: 2.35, y: 3.35, z: 3.15 },
-    target: { x: BENCH_PREP_ORIGIN.x, y: 0.12, z: BENCH_PREP_ORIGIN.z },
+    pos: { x: BENCH_PREP_ORIGIN.x + 0.25, y: 3.55, z: 3.15 },
+    target: { x: BENCH_PREP_ORIGIN.x, y: 0.10, z: BENCH_PREP_ORIGIN.z },
   },
   psu: {
     label: 'PSU & Drives',
-    pos: { x: -0.95, y: 1.45, z: 4.35 },
+    pos: { x: CASE_ORIGIN.x + 0.70, y: 1.45, z: 4.35 },
     target: { x: CASE_ORIGIN.x, y: 0.55, z: 0.0 },
   },
   rear: {
     label: 'Rear I/O & Exhaust',
-    pos: { x: -6.1, y: 2.85, z: 3.1 },
-    target: { x: -2.25, y: 2.25, z: -0.1 },
+    pos: { x: CASE_ORIGIN.x - 5.45, y: 2.85, z: 1.45 },
+    target: { x: CASE_ORIGIN.x - 1.45, y: 2.25, z: -0.05 },
   },
 });
 
@@ -130,28 +130,28 @@ export class SceneManager {
     this.scene.add(hemi);
 
     const key = new THREE.DirectionalLight(0xfff1dc, 2.2);
-    key.position.set(5.5, 9.5, 7.0);
+    key.position.set(5.5, 10.5, 7.5);
     if (!this.isSoftwareGl) {
       key.castShadow = true;
       key.shadow.mapSize.set(1024, 1024);
       key.shadow.camera.near = 1.0;
-      key.shadow.camera.far = 26;
-      key.shadow.camera.left = -6.5;
-      key.shadow.camera.right = 6.5;
-      key.shadow.camera.top = 6.5;
-      key.shadow.camera.bottom = -4.5;
+      key.shadow.camera.far = 30;
+      key.shadow.camera.left = -9.5;
+      key.shadow.camera.right = 10.0;
+      key.shadow.camera.top = 7.0;
+      key.shadow.camera.bottom = -6.0;
       key.shadow.bias = -0.0005;
       key.shadow.normalBias = 0.015;
     }
     this.scene.add(key);
 
     const rim = new THREE.DirectionalLight(0x88b8ff, 0.85);
-    rim.position.set(-6.0, 6.0, -5.5);
+    rim.position.set(-7.5, 6.5, -6.5);
     this.scene.add(rim);
 
     // Focused overhead lab lamp light illuminating interior chassis
-    const lampSpot = new THREE.PointLight(0xfff7e8, 5.0, 14, 1.8);
-    lampSpot.position.set(-1.1, 5.4, 1.8);
+    const lampSpot = new THREE.PointLight(0xfff7e8, 5.0, 16, 1.8);
+    lampSpot.position.set(CASE_ORIGIN.x + 0.5, 5.4, 1.8);
     this.scene.add(lampSpot);
   }
 
@@ -178,58 +178,72 @@ export class SceneManager {
 
   _makeEsdMatTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 512;
+    canvas.width = 2048;
+    canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
     ctx.fillStyle = '#182232';
-    ctx.fillRect(0, 0, 1024, 512);
+    ctx.fillRect(0, 0, 2048, 1024);
 
     // Subtle millimeter grid lines
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= 1024; x += 32) {
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.13)';
+    ctx.lineWidth = 1.5;
+    for (let x = 0; x <= 2048; x += 48) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, 512);
+      ctx.lineTo(x, 1024);
       ctx.stroke();
     }
-    for (let y = 0; y <= 512; y += 32) {
+    for (let y = 0; y <= 1024; y += 48) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(1024, y);
+      ctx.lineTo(2048, y);
       ctx.stroke();
     }
 
-    // Case Footprint Outline (left half)
-    ctx.strokeStyle = 'rgba(62, 207, 94, 0.45)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([10, 6]);
-    ctx.strokeRect(110, 128, 360, 230);
+    // Exact world-to-canvas mapping matching esdPad BoxGeometry(14.8, 0.02, 7.2) at (1.10, -0.01, 0)
+    // World X: [-6.30 .. +8.50], World Z: [-3.60 .. +3.60]
+    const toPx = (wx) => ((wx + 6.30) / 14.8) * 2048;
+    const toPy = (wz) => ((wz + 3.60) / 7.2) * 1024;
+    const drawZoneRect = (xMin, xMax, zMin, zMax) => {
+      const px = toPx(xMin);
+      const py = toPy(zMin);
+      const pw = toPx(xMax) - px;
+      const ph = toPy(zMax) - py;
+      ctx.strokeRect(px, py, pw, ph);
+      return { px, py, pw, ph };
+    };
+
+    // Case Footprint Outline (centered at CASE_ORIGIN -2.65, 0)
+    ctx.strokeStyle = 'rgba(62, 207, 94, 0.48)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([16, 10]);
+    const chassisRect = drawZoneRect(CASE_ORIGIN.x - 2.45, CASE_ORIGIN.x + 2.45, -1.26, 1.26);
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(62, 207, 94, 0.72)';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('CHASSIS BAY (GROUNDED)', 125, 118);
+    ctx.fillStyle = 'rgba(62, 207, 94, 0.80)';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText('CHASSIS BAY (GROUNDED)', chassisRect.px + 12, chassisRect.py - 16);
 
-    // Bench Motherboard Prep Pad Outline (right-middle)
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(560, 120, 240, 260);
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.78)';
-    ctx.fillText('MOTHERBOARD ESD PREP PAD', 560, 108);
+    // Bench Motherboard Prep Pad Outline (centered at BENCH_PREP_ORIGIN 1.55, 0)
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+    ctx.lineWidth = 4;
+    const benchRect = drawZoneRect(BENCH_PREP_ORIGIN.x - 1.38, BENCH_PREP_ORIGIN.x + 1.38, -1.72, 1.72);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.88)';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText('MOTHERBOARD ESD PREP PAD', benchRect.px + 6, benchRect.py - 16);
 
-    // Staging Parts Strip (far right & front)
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.42)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(830, 60, 160, 390);
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('STAGING TRAY', 852, 48);
+    // Spacious Staging Parts Bay (far right tray x: 3.35..7.85, z: -3.25..+3.25)
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.52)';
+    ctx.lineWidth = 4;
+    const trayRect = drawZoneRect(3.35, 7.85, -3.25, 3.25);
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.88)';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText('STAGING TRAY', trayRect.px + 24, trayRect.py + 36);
 
     // Top branding corner
-    ctx.fillStyle = 'rgba(226, 232, 240, 0.45)';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText('ESD-SAFE ASSEMBLY WORKBENCH · SCALE 1:1', 28, 34);
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.48)';
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText('ESD-SAFE ASSEMBLY WORKBENCH · EXPANDED STATION · SCALE 1:1', 42, 50);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -247,21 +261,22 @@ export class SceneManager {
       roughness: 0.9,
       metalness: 0.05,
     });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(45, 45), floorMat);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(58, 58), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -3.4;
     this.envGroup.add(floor);
 
-    // Wooden laminate workbench top (top surface strictly at y = 0)
+    // Expanded wooden laminate workbench top (top surface at y = -0.005, mat sits flush at y = 0)
     const woodTex = this._makeWorkbenchTexture();
+    woodTex.repeat.set(4.5, 2.5);
     const deskMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: woodTex,
       roughness: 0.72,
       metalness: 0.06,
     });
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(13.0, 0.28, 7.6), deskMat);
-    deskTop.position.set(0.35, -0.145, 0);
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.30, 9.6), deskMat);
+    deskTop.position.set(1.10, -0.155, 0);
     deskTop.receiveShadow = !this.isSoftwareGl;
     this.envGroup.add(deskTop);
 
@@ -271,12 +286,17 @@ export class SceneManager {
       roughness: 0.42,
       metalness: 0.78,
     });
-    const legGeo = new THREE.BoxGeometry(0.22, 3.12, 0.22);
-    for (const [lx, lz] of [[-5.7, -3.3], [6.4, -3.3], [-5.7, 3.3], [6.4, 3.3]]) {
+    const legGeo = new THREE.BoxGeometry(0.24, 3.10, 0.24);
+    for (const [lx, lz] of [[-7.1, -4.2], [9.3, -4.2], [-7.1, 4.2], [9.3, 4.2]]) {
       const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(lx, -1.84, lz);
+      leg.position.set(lx, -1.85, lz);
       this.envGroup.add(leg);
     }
+    const apronFront = new THREE.Mesh(new THREE.BoxGeometry(16.4, 0.16, 0.10), legMat);
+    apronFront.position.set(1.10, -0.38, 4.2);
+    const apronBack = apronFront.clone();
+    apronBack.position.z = -4.2;
+    this.envGroup.add(apronFront, apronBack);
 
     // Dark Anti-Static ESD Mat resting cleanly atop desk (top face at y = 0.002)
     const matTex = this._makeEsdMatTexture();
@@ -286,38 +306,38 @@ export class SceneManager {
       roughness: 0.85,
       metalness: 0.04,
     });
-    const esdPad = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.02, 5.8), esdMat);
-    esdPad.position.set(0.35, -0.01, 0);
+    const esdPad = new THREE.Mesh(new THREE.BoxGeometry(14.8, 0.02, 7.2), esdMat);
+    esdPad.position.set(1.10, -0.01, 0);
     esdPad.receiveShadow = !this.isSoftwareGl;
     this.envGroup.add(esdPad);
 
     // ESD Grounding Snap & Coiled Wire on front-left corner of mat
     const snapMat = new THREE.MeshStandardMaterial({ color: 0xd4a84f, metalness: 0.85, roughness: 0.25 });
     const snapDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.025, 16), snapMat);
-    snapDisc.position.set(-4.65, 0.012, 2.45);
+    snapDisc.position.set(-5.85, 0.012, 3.15);
     this.envGroup.add(snapDisc);
 
-    // Articulated Overhead LED Bench Lamp (vertical silhouette landmark on rear-left)
+    // Articulated Overhead LED Bench Lamp (rear-left outside ESD mat)
     const lampGroup = new THREE.Group();
     const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.9, 12), legMat);
-    lampPost.position.set(-5.3, 2.45, -2.9);
+    lampPost.position.set(-6.7, 2.45, -3.7);
     lampGroup.add(lampPost);
 
-    const lampArm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.08), legMat);
-    lampArm.position.set(-4.05, 4.86, -2.5);
-    lampArm.rotation.y = -0.22;
+    const lampArm = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.08), legMat);
+    lampArm.position.set(-5.1, 4.86, -3.1);
+    lampArm.rotation.y = -0.32;
     lampGroup.add(lampArm);
 
-    const lampHead = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.12, 0.34), legMat);
-    lampHead.position.set(-2.5, 4.82, -2.1);
+    const lampHead = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.34), legMat);
+    lampHead.position.set(-3.4, 4.82, -2.5);
     lampGroup.add(lampHead);
 
     const ledStrip = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.25, 0.22),
+      new THREE.PlaneGeometry(1.35, 0.22),
       new THREE.MeshBasicMaterial({ color: 0xfff8e6 })
     );
     ledStrip.rotation.x = Math.PI / 2;
-    ledStrip.position.set(-2.5, 4.75, -2.1);
+    ledStrip.position.set(-3.4, 4.75, -2.5);
     lampGroup.add(ledStrip);
     this.envGroup.add(lampGroup);
 
@@ -356,7 +376,7 @@ export class SceneManager {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.minDistance = 1.6;
-    this.controls.maxDistance = 22.0;
+    this.controls.maxDistance = 28.0;
     this.controls.maxPolarAngle = Math.PI * 0.495; // Keep camera above workbench surface
     this.controls.minPolarAngle = 0.12;
     this.controls.screenSpacePanning = true;
@@ -438,13 +458,14 @@ export class SceneManager {
     this.renderPending = false;
     if (this.disposed) return;
 
-    const dt = Math.min(0.05, Math.max(0.001, (now - this.lastTimeMs) / 1000));
+    const maxDt = this.isSoftwareGl ? 0.14 : 0.05;
+    const dt = Math.min(maxDt, Math.max(0.001, (now - this.lastTimeMs) / 1000));
     this.lastTimeMs = now;
 
     let moving = false;
 
     if (this.cameraGoalPos && this.cameraGoalTarget) {
-      const k = 7.5;
+      const k = this.isSoftwareGl ? 14.0 : 7.5;
       this.camera.position.x = THREE.MathUtils.damp(this.camera.position.x, this.cameraGoalPos.x, k, dt);
       this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, this.cameraGoalPos.y, k, dt);
       this.camera.position.z = THREE.MathUtils.damp(this.camera.position.z, this.cameraGoalPos.z, k, dt);
